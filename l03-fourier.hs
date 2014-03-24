@@ -52,14 +52,14 @@ main = do
               "gdiamond" -> return $ gaussian (3,3) diamond
   let
       (w,h) = getSize img
-      (re,im) = oft img
-      amp = dftamp re im
-      pha = dftphase re im
-      inv = oift n (re,im)
+      (re,im) = dft2D img
+      (amp,pha) = dftToPolar2D (re,im)
+      inv = idft2D n (re,im)
   rimg <- case mode of
        "complex" -> return $ montage (2,1) 2 [logNormalize re, logNormalize im]
        "polar" -> return $ montage (2,1) 2 [logNormalize amp, unitNormalize pha]
        "inverse" -> return $ inv
        "images" -> return $ montage (w,h) 2 $ fimages (re,im)
+       "simages" -> return $ montage (w,h) 2 $ sfimages (re,im)
        "invimages" -> return $ montage (w,h) 2 $ invimages (re,im)
   saveImage resultImage rimg
