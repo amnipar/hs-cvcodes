@@ -8,6 +8,7 @@ module Random
 , setSeed
 , mt19937
 , getGaussian
+, getGaussianVector
 ) where
 
 import Control.Monad
@@ -33,7 +34,6 @@ generateGaussians rng sigma =
     (generateGaussians rng sigma)
 
 -- corrupts the signal f with random values g
---corruptGaussian :: [Float] -> [Double] ->
 corruptGaussian f g = zipWith addToY f g
   where
     addToY (x,y) g = (x,y+g)
@@ -46,3 +46,8 @@ corruptWithGaussian rng sigma (x:xs) = do
   x' <- addGaussian rng sigma x
   xs' <- corruptWithGaussian rng sigma xs
   return $ x' : xs'
+
+getGaussianVector seed sigma n = unsafePerformIO $ do
+  rng <- newRNG mt19937
+  setSeed rng seed
+  generateNGaussians rng sigma n
