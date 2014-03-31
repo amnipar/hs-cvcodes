@@ -2,31 +2,27 @@ module Main where
 
 import CV.Image
 import CV.Filters
-import CV.Matrix
+import CV.Matrix as M
+import Filters
 
--- options : filterManual, smoothAvg s, smoothGaussian s
---convolve = filterManual
-convolve = smoothAvg 5
---convolve = smoothGaussian 7
-
-filterManual = convolve2D mask cp
-smoothAvg s = convolve2D (createAvgMask s) (getCenterPoint s)
-smoothGaussian s = convolve2D (createGaussianMask s) (getCenterPoint s)
-
--- centerpoint of manual mask
-cp :: (Int,Int)
-cp = (1,1)
--- manually defined convolution mask
-mask :: Matrix D32
-mask = CVLang.fromList (3,3) $
+-- mask size; odd values recommended, like 3,5,7
+maskSize = 5 -- 3 for manualMask
+-- mask centerpoint
+maskCenter = getMaskCenter2D(maskSize)
+-- options : average mask, gaussian mask, manual mask
+mask = averageMask2D(maskSize)
+--mask = gaussianMask2D(maskSize)
+--mask = manualMask
+-- manually defined convolution mask; remember to set maskSize to 3!
+manualMask :: Matrix Float
+manualMask = M.fromList (3,3) $
   [ -1, 0, 1,
-  -1, 0, 1,
-  -1, 0, 1 ]
+    -1, 0, 1,
+    -1, 0, 1 ]
 
 main = do
-  img <- readImage "nut.png"
-  displayImage "Alkuperäinen" $ img
-  displayImage "Suodatettu"  $ grayToRGB $ convolve $ rgbToGray img
-
-avg :: Float -> (Int,Int) -> Float
-avg  v (x,y) = v
+  img <- readFromFile "park.png"
+  saveImage "filtered-image.png" $ montage (1,2) 2 $
+    [ img
+    , convolve2D mask maskCenter img
+    ]
