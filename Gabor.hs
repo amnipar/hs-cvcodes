@@ -13,7 +13,7 @@ module Gabor
 
 import CV.Image
 import CV.Filters
-import CV.ImageMath as IM hiding (exp,div)
+import CV.ImageMath as IM hiding (div)
 import CV.ImageMathOp
 import CV.Matrix as M
 import CV.ColourUtils
@@ -22,7 +22,7 @@ import CV.Pixelwise
 i = fromIntegral
 
 gabor :: Float -> Float -> Float -> Float -> Float -> (Int,Int) -> (Float,Float)
-gabor lambda theta psi sigma gamma (x,y) = 
+gabor lambda theta psi sigma gamma (x,y) =
   (norm * gaussian * rharmonic, norm * gaussian * iharmonic)
   where
     sigma_x = sigma
@@ -34,14 +34,14 @@ gabor lambda theta psi sigma gamma (x,y) =
     rharmonic = cos $ (2 * pi * x') / lambda + psi
     iharmonic = sin $ (2 * pi * x') / lambda + psi
 
-g1 = gabor 1.79 0        0 1 2
-g2 = gabor 1.79 (pi/8)   0 1 2
-g3 = gabor 1.79 (pi/4)   0 1 2
-g4 = gabor 1.79 (3*pi/8) 0 1 2
-g5 = gabor 1.79 (pi/2)   0 1 2
-g6 = gabor 1.79 (5*pi/8) 0 1 2
-g7 = gabor 1.79 (3*pi/4) 0 1 2
-g8 = gabor 1.79 (7*pi/8) 0 1 2
+g1 = gabor 2.33 0        0 1 0.5
+g2 = gabor 2.33 (pi/8)   0 1 0.5
+g3 = gabor 2.33 (pi/4)   0 1 0.5
+g4 = gabor 2.33 (3*pi/8) 0 1 0.5
+g5 = gabor 2.33 (pi/2)   0 1 0.5
+g6 = gabor 2.33 (5*pi/8) 0 1 0.5
+g7 = gabor 2.33 (3*pi/4) 0 1 0.5
+g8 = gabor 2.33 (7*pi/8) 0 1 0.5
 
 {-
 gi1 = gabor 30 0        0      17 1

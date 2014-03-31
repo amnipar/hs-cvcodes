@@ -48,6 +48,22 @@ phases =     [ 0.0, 1.0, 0.0, 0.0, 0.0,-0.5, 0.0, 0.0, 0.0, 0.0, 1.0]
 
 replacex (fx,fy) (x,y) = (x,fy)
 
+snd3 (_,b,_) = b
+
+zeroAmp (u,a,p) = (u,0,p)
+
+ln x | x < 1     = 0
+     | otherwise = log x
+
+removeHighest n s = s1 ++ (map zeroAmp s2) ++ s3
+  where
+    l = length s
+    c | even l = l `div` 2
+      | otherwise = l `div` 2 + 1
+    s1 = take (c-n) s
+    s2 = take (2*n) $ drop (c-n) s
+    s3 = drop (c+n) s
+
 main = do
   rng <- newRNG mt19937
   setSeed rng 12349871235125
@@ -56,22 +72,18 @@ main = do
     signal = sample (width-2*margin) xscale $ generateSignal amplitudes phases
     corrupted = map yToFloat $ corruptGaussian (map yToDouble signal) gs
     clean = toPoints (width,height) margin (xscale,yscale) ymin signal
-    --noise = zip [margin,width-margin-1] $
-    --    map (floor.(\y -> y*yscale + (fi $ height-y0-10))) gs
     points = toPoints (width,height) margin (xscale,yscale) ymin corrupted
     ipoints = toPoints (width,height) margin (xscale,yscale) ymin isignal
     fsignal = dft1D corrupted
-    psignal = dftToPolar1D fsignal
-    famp = map (amp (length psignal)) psignal
-    fpha = map pha psignal
-    isignal = zip (map fst corrupted) $ (idft1D (-9) fsignal)
-  --print $ take 20 famp
-  --print $ take 20 fpha
-  --print $ take 20 isignal
+    psignal = removeHighest 160 $ dftToPolar1D fsignal
+    ppoints = toPoints (width,height) margin (xscale,yscale) ymin $
+      zip (map fst signal) (map ln $ map snd3 psignal)
+    isignal = zip (map fst corrupted) $ (idft1D 0 $ polarToDft1D psignal)
+    y0 = ytop height margin yscale ymin 0
   saveImage "fourier-signal.png" $
-      plotLines (1,0,0) 2 ipoints $
-      plotLines (0,0,1) 1 points $
-      plotLines (0,1,0) 2 clean $
+      plotLines blue 1 ipoints $
+      plotSpikes red 1 0 y0 ppoints $
+      plotLines green 2 clean $
       --plotLines (1,0,0) 1 noise $
       emptyColorImage (width,height) (1,1,1)
 

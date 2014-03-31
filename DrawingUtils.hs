@@ -12,6 +12,7 @@ module DrawingUtils
 , toLines
 , plotLines
 , plotSpikes
+, plotRects
 , naiveUpscale
 , emptyGrayImage
 , emptyColorImage
@@ -21,6 +22,7 @@ import CV.Image
 import CV.Pixelwise
 import CV.ImageOp
 import CV.Drawing
+import Utils.Rectangle
 
 import Data.Function
 
@@ -114,7 +116,7 @@ toLines (p1:p2:ps) ls = [(p1,p2)] ++ (toLines (p2:ps) ls)
 
 -- | Draws a list of lines over the image. The lines are given in pixel
 --   coordinates.
-plotLines :: (D32,D32,D32) -> Int -> [(Int,Int)]
+plotLines :: (Float,Float,Float) -> Int -> [(Int,Int)]
     -> Image RGB D32 -> Image RGB D32
 plotLines color size points image =
   image <## [lineOp color size (x1,y1) (x2,y2)
@@ -122,11 +124,27 @@ plotLines color size points image =
 
 -- | Plots a list of points as spikes with a vertical line and a small circle at
 --   the top end. The points are given in pixel coordinates.
-plotSpikes :: (D32,D32,D32) -> Int -> Int -> Int -> [(Int,Int)]
-    -> Image RGB D32 -> Image RGB D32
+plotSpikes :: (Float,Float,Float) -> Int -> Int -> Int -> [(Int,Int)]
+    -> Image RGB Float -> Image RGB Float
 plotSpikes color lineSize pointSize y0 points image =
   image <## [lineOp color lineSize (x,y0) (x,y) | (x,y) <- points]
         <## [circleOp color (x,y) pointSize Filled | (x,y) <- points]
+
+plotPoints :: (Float,Float,Float) -> Int -> [(Int,Int)]
+    -> Image RGB Float -> Image RGB Float
+plotPoints color size points image = image
+
+plotRects :: (Float,Float,Float) -> Int -> [((Int,Int),(Int,Int))]
+    -> Image RGB Float -> Image RGB Float
+plotRects color size rects image =
+  image <## [rectOp color s (mkRectangle p1 p2) | (p1,p2) <- rects]
+  where
+        s | size > 0 = size
+          | otherwise = (-1)
+
+plotCircles :: (Float,Float,Float) -> Int -> [((Int,Int),Int)]
+    -> Image RGB Float -> Image RGB Float
+plotCircles color size cirles image = image
 
 -- | Creates a naively upscaled version of the image by replicating the pixels
 --   s times in both directions.
@@ -143,10 +161,10 @@ naiveUpscale s image = imageFromFunction (nw,nh) f
 
 -- | Creates an empty grayscale image of the specific shade. Can be used as a
 --   starting point for drawing operations.
-emptyGrayImage :: (Int,Int) -> D32 -> Image GrayScale D32
+emptyGrayImage :: (Int,Int) -> D32 -> Image GrayScale Float
 emptyGrayImage (w,h) color = imageFromFunction (w,h) (const color)
 
 -- | Creates an empty color image of the specific shade. Can be used as a
 --   starting point for drawing operations.
-emptyColorImage :: (Int,Int) -> (D32,D32,D32) -> Image RGB D32
+emptyColorImage :: (Int,Int) -> (Float,Float,Float) -> Image RGB Float
 emptyColorImage (w,h) color = imageFromFunction (w,h) (const color)
