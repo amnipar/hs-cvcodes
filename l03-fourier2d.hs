@@ -39,7 +39,11 @@ usage = "bad parameters\n"
      ++ "   result = the image where output is drawn\n"
 
 main = do
-  (mode :: Maybe String, input :: Maybe String, numComponents :: Maybe Int, scaleFactor :: Maybe Int, resultImage :: Maybe String) <- readArgs
+  (mode :: Maybe String,
+   input :: Maybe String,
+   numComponents :: Maybe Int,
+   scaleFactor :: Maybe Int,
+   resultImage :: Maybe String) <- readArgs
   img <- case input of
     Just "disc" -> return disc
     Just "sdisc" -> return sdisc
@@ -62,7 +66,7 @@ main = do
     Just "complex" -> return $ montage (2,1) 2 $
       [ naiveUpscale s $ logNormalize re
       , naiveUpscale s $ logNormalize im ]
-    Just "polar" -> return $ montage (2,1) 2 
+    Just "polar" -> return $ montage (2,1) 2
       [ naiveUpscale s $ logNormalize amp
       , naiveUpscale s $ unitNormalize pha ]
     Just "inverse" -> return $ naiveUpscale s $ inv
