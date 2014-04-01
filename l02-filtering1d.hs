@@ -48,7 +48,7 @@ maskSize = 7
 
 -- index of the mask center
 maskCenter :: Int
-maskCenter = 3
+maskCenter = getMaskCenter1D(maskSize)
 
 amplitudes :: [Float]
 phases :: [Float]
