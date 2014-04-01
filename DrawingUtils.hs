@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module DrawingUtils
 ( black,white
 , blue,lblue,mblue,dblue,cblue
@@ -16,13 +17,17 @@ module DrawingUtils
 , naiveUpscale
 , emptyGrayImage
 , emptyColorImage
+, resizeImage
+, resizeImageFaithful
+, scaleImage
 ) where
 
 import CV.Image
 import CV.Pixelwise
 import CV.ImageOp
 import CV.Drawing
-import Utils.Rectangle
+import CV.Transforms
+import Utils.Rectangle hiding (scale)
 
 import Data.Function
 
@@ -168,3 +173,17 @@ emptyGrayImage (w,h) color = imageFromFunction (w,h) (const color)
 --   starting point for drawing operations.
 emptyColorImage :: (Int,Int) -> (Float,Float,Float) -> Image RGB Float
 emptyColorImage (w,h) color = imageFromFunction (w,h) (const color)
+
+-- | Forces the image to given size, not considering the aspect ratio.
+resizeImage :: (CreateImage (Image c Float)) =>
+  (Int,Int) -> Image c Float -> Image c Float
+resizeImage size image = scaleToSize Cubic False size image
+
+-- | Resize the image to given size, preserving the aspect ratio.
+resizeImageFaithful :: (CreateImage (Image c Float)) =>
+  (Int,Int) -> Image c Float -> Image c Float
+resizeImageFaithful size image = scaleToSize Cubic True size image
+
+scaleImage :: (CreateImage (Image c Float)) =>
+  (Float,Float) -> Image c Float -> Image c Float
+scaleImage ratio image = scale Cubic ratio image
