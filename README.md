@@ -7,9 +7,9 @@ Some examples require datasets. They can be downloaded from the following
 Dropbox links:
 
 * uwa-faces: University of Western Australia face recognition dataset (selected)
-    - http://
+    - <https://www.dropbox.com/s/l61klbzy6u3tq6w/uwa-faces.zip>
 * plant: Spectral imaging data for leaves of a real plant and a plastic plant
-    - http://
+    - <https://www.dropbox.com/s/rud2k9j9yslu4xo/plant.zip>
 
 The following are example codes and programs for individual lectures, presented
 in the order they appear on the lectures:
