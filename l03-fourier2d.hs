@@ -18,8 +18,10 @@ sdisc = gaussian (3,3) disc
 -- 24pix image of r1=3 and r2=9 white torus on black background
 torus = torusGrayImage 24 3 9 1 0
 storus = gaussian (3,3) torus
+-- 20pix image of r=5 white square on black background
 square = squareGrayImage 20 5 1 0
 ssquare = gaussian (3,3) square
+-- 20pix image of r=5 white diamond on black background
 diamond = diamondGrayImage 20 5 1 0
 sdiamond = gaussian (3,3) diamond
 

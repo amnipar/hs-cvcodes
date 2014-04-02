@@ -4,8 +4,10 @@ import CV.Image
 import CV.Filters
 import CV.ImageMath as IM hiding (div)
 import CV.ColourUtils
+import CV.Operations
 
 import Filters
+import Fourier
 import Gabor
 
 size = 7
@@ -17,10 +19,13 @@ g = [g1,g2,g3,g4,g5,g6,g7,g8]
 main = do
   img <- readFromFile "park.png"
   let
-    (gimg1,gimg2) = filterGabor mask size center img
+    (gre,gim) = filterGabor mask size center img
+    (gamp,gpha) = dftToPolar2D (gre, gim)
   saveImage "gabor.png" $ montage (2,2) 2 $
-    [ stretchHistogram gimg1
-    , stretchHistogram gimg2
-    , stretchHistogram $ IM.sqrt $ (IM.add (IM.mul gimg1 gimg1) (IM.mul gimg2 gimg2))
-    , stretchHistogram $ IM.atan2 gimg2 gimg1
+    [ logNormalize gre
+    , logNormalize gim
+    , stretchHistogram gamp
+    --IM.sqrt $ (IM.add (IM.mul gimg1 gimg1) (IM.mul gimg2 gimg2))
+    , unitNormalize gpha
+    -- $ IM.atan2 gimg2 gimg1
     ]
