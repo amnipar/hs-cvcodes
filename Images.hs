@@ -1,15 +1,42 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Images
-( discGrayImage
+( emptyGrayImage
+, emptyColorImage
+, convGrayToColor
+, convColorToGray
+, discGrayImage
 , torusGrayImage
 , squareGrayImage
 , diamondGrayImage
 , powImage
+, getPixels
+, naiveUpscale
+, resizeImage
+, resizeImageFaithful
+, scaleImage
 ) where
 
 import CV.Image
 import CV.Pixelwise
+import CV.Transforms
 
 import BasicUtils
+
+-- | Creates an empty grayscale image of the specific shade. Can be used as a
+--   starting point for drawing operations.
+emptyGrayImage :: (Int,Int) -> D32 -> Image GrayScale Float
+emptyGrayImage (w,h) color = imageFromFunction (w,h) (const color)
+
+-- | Creates an empty color image of the specific shade. Can be used as a
+--   starting point for drawing operations.
+emptyColorImage :: (Int,Int) -> (Float,Float,Float) -> Image RGB Float
+emptyColorImage (w,h) color = imageFromFunction (w,h) (const color)
+
+convGrayToColor :: Image GrayScale Float -> Image RGB Float
+convGrayToColor = grayToRGB
+
+convColorToGray :: Image RGB Float -> Image GrayScale Float
+convColorToGray = rgbToGray
 
 -- draws an image of size s, containing a disc of radius r, of color fc, on
 -- background of color bc
@@ -63,3 +90,38 @@ powImage (w,h) = imageFromFunction (w,h) f
             | x <= w2 && y >  h2 = 1 / (sqrt $ (iToF x)^2 + (iToF $ h-y)^2)
             | x >  w2 && y <= h2 = 1 / (sqrt $ (iToF $ w-x)^2 + (iToF y)^2)
             | otherwise          = 1 / (sqrt $ (iToF $ w-x)^2 + (iToF $ h-y)^2)
+
+-- | Turns an image into a list of point-value pairs.
+getPixels :: Image GrayScale Float -> [((Int,Int),Float)]
+getPixels image =
+  concat $ [[((x,y), getPixel (x,y) image)
+            | y<-[0..h-1]] | x <- [0..w-1]]
+  where
+    (w,h) = getSize image
+
+-- | Creates a naively upscaled version of the image by replicating the pixels
+--   s times in both directions.
+naiveUpscale :: Int -> Image GrayScale D32 -> Image GrayScale D32
+naiveUpscale factor image = imageFromFunction (nw,nh) f
+  where
+    (w,h) = getSize image
+    nw = factor*w
+    nh = factor*h
+    f (x,y) = getPixel (x',y') image
+      where
+        x' = x `div` factor
+        y' = y `div` factor
+
+-- | Forces the image to given size, not considering the aspect ratio.
+resizeImage :: (CreateImage (Image c Float)) =>
+  (Int,Int) -> Image c Float -> Image c Float
+resizeImage size image = scaleToSize Cubic False size image
+
+-- | Resize the image to given size, preserving the aspect ratio.
+resizeImageFaithful :: (CreateImage (Image c Float)) =>
+  (Int,Int) -> Image c Float -> Image c Float
+resizeImageFaithful size image = scaleToSize Cubic True size image
+
+scaleImage :: (CreateImage (Image c Float)) =>
+  (Float,Float) -> Image c Float -> Image c Float
+scaleImage ratio image = scale Cubic ratio image

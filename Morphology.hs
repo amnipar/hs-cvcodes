@@ -8,6 +8,7 @@ module Morphology
 , thinning
 , skeleton
 , pruneEndpoints
+, findPoints
 , findJunctions
 , crossMask
 , squareMask
@@ -24,8 +25,9 @@ import CV.Matrix as M
 import CV.Pixelwise
 import CV.ColourUtils
 
-import CVLang.DrawingUtils
-import CVLang.Thresholding
+import Images
+import DrawingUtils
+import Thresholding
 
 maskToMatrix :: [Float] -> (Matrix D32, (Int,Int))
 maskToMatrix mask = (M.fromList size mask, center)
@@ -81,12 +83,15 @@ pruneEndpoints n image
   where
     thinned = foldr thinning image endpointMasks
 
-junction skel mask image = image #+ (hitormiss mask skel)
-
-findJunctions skel =
-  foldr (junction skel) (emptyGrayImage (w,h) 0) junctionMasks
+-- | Returns an image that has the hits produced by the masks marked as 1's
+findPoints image masks =
+  foldr (findHit image) (emptyGrayImage (w,h) 0) masks
   where
-    (w,h) = getSize skel
+    (w,h) = getSize image
+    findHit input mask output = output #+ (hitormiss mask input)
+
+-- | Returns an image that has the junction points of a skeleton marked as 1's
+findJunctions skel = findPoints skel junctionMasks
 
 distanceTransform :: [Float] -> Image GrayScale D32 -> Image GrayScale D32
     -> Image GrayScale D32
@@ -124,114 +129,137 @@ close mask n image = erode mask n $ dilate mask n image
 hitormiss :: [Float] -> Image GrayScale D32 -> Image GrayScale D32
 hitormiss mask image = morph mask (sum $ map abs mask) image
 
+crossMask :: [Float]
 crossMask =
   [ 0, 1, 0
   , 1, 1, 1
   , 0, 1, 0 ]
+squareMask :: [Float]
 squareMask =
   [ 1, 1, 1
   , 1, 1, 1
   , 1, 1, 1 ]
-
+skeletonEdgeMask1 :: [Float]
 skeletonEdgeMask1 =
   [-1, 0, 1
   ,-1, 1, 1
   ,-1, 0, 1 ]
+skeletonEdgeMask2 :: [Float]
 skeletonEdgeMask2 =
   [-1,-1,-1
   , 0, 1, 0
   , 1, 1, 1 ]
+skeletonEdgeMask3 :: [Float]
 skeletonEdgeMask3 =
   [ 1, 0,-1
   , 1, 1,-1
   , 1, 0,-1 ]
+skeletonEdgeMask4 :: [Float]
 skeletonEdgeMask4 =
   [ 1, 1, 1
   , 0, 1, 0
   ,-1,-1,-1 ]
+skeletonCornerMask1 :: [Float]
 skeletonCornerMask1 =
   [-1,-1, 0
   ,-1, 1, 1
   , 0, 1, 0 ]
+skeletonCornerMask2 :: [Float]
 skeletonCornerMask2 =
   [ 0,-1,-1
   , 1, 1,-1
   , 0, 1, 0 ]
+skeletonCornerMask3 :: [Float]
 skeletonCornerMask3 =
   [ 0, 1, 0
   , 1, 1,-1
   , 0,-1,-1 ]
+skeletonCornerMask4 :: [Float]
 skeletonCornerMask4 =
   [ 0, 1, 0
   ,-1, 1, 1
   ,-1,-1, 0 ]
-
+endpointMask1 :: [Float]
 endpointMask1 =
   [ 0, 0, 0
   ,-1, 1,-1
   ,-1,-1,-1 ]
+endpointMask2 :: [Float]
 endpointMask2 =
   [-1,-1, 0
   ,-1, 1, 0
   ,-1,-1, 0 ]
+endpointMask3 :: [Float]
 endpointMask3 =
   [-1,-1,-1
   ,-1, 1,-1
   , 0, 0, 0 ]
+endpointMask4 :: [Float]
 endpointMask4 =
   [ 0,-1,-1
   , 0, 1,-1
   , 0,-1,-1 ]
-
+junctionMask1 :: [Float]
 junctionMask1 =
   [ 1, 0, 1
   , 0, 1, 0
   , 0, 1, 0 ]
+junctionMask2 :: [Float]
 junctionMask2 =
   [ 0, 1, 0
   , 0, 1, 1
   , 1, 0, 0 ]
+junctionMask3 :: [Float]
 junctionMask3 =
   [ 0, 0, 1
   , 1, 1, 0
   , 0, 0, 1 ]
+junctionMask4 :: [Float]
 junctionMask4 =
   [ 1, 0, 0
   , 0, 1, 1
   , 0, 1, 0 ]
+junctionMask5 :: [Float]
 junctionMask5 =
   [ 0, 1, 0
   , 0, 1, 0
   , 1, 0, 1 ]
+junctionMask6 :: [Float]
 junctionMask6 =
   [ 0, 0, 1
   , 1, 1, 0
   , 0, 1, 0 ]
+junctionMask7 :: [Float]
 junctionMask7 =
   [ 1, 0, 0
   , 0, 1, 1
   , 1, 0, 0 ]
+junctionMask8 :: [Float]
 junctionMask8 =
   [ 0, 1, 0
   , 1, 1, 0
   , 0, 0, 1 ]
+junctionMask9 :: [Float]
 junctionMask9 =
   [ 1, 0, 0
   , 0, 1, 0
   , 1, 0, 1 ]
+junctionMask10 :: [Float]
 junctionMask10 =
   [ 1, 0, 1
   , 0, 1, 0
   , 1, 0, 0 ]
+junctionMask11 :: [Float]
 junctionMask11 =
   [ 1, 0, 1
   , 0, 1, 0
   , 0, 0, 1 ]
+junctionMask12 :: [Float]
 junctionMask12 =
   [ 0, 0, 1
   , 0, 1, 0
   , 1, 0, 1 ]
-
+skeletonMasks :: [[Float]]
 skeletonMasks =
   [ skeletonCornerMask4
   , skeletonEdgeMask4
@@ -242,14 +270,14 @@ skeletonMasks =
   , skeletonCornerMask1
   , skeletonEdgeMask1
   ]
-
+endpointMasks :: [[Float]]
 endpointMasks =
   [ endpointMask1
   , endpointMask2
   , endpointMask3
   , endpointMask4
   ]
-
+junctionMasks :: [[Float]]
 junctionMasks =
   [ junctionMask12
   , junctionMask11

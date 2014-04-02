@@ -17,6 +17,7 @@ module Filters
 import CV.Matrix as M
 
 import Data.List
+
 import BasicUtils
 import Gaussian
 

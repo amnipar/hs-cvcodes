@@ -4,6 +4,7 @@ import CV.Image
 import CV.Filters
 
 import BasicUtils
+import Images
 import DrawingUtils
 
 -- plot width in pixels

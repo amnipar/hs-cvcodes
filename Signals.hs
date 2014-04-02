@@ -4,13 +4,13 @@ module Signals
 , generateFrequencyComponent
 ) where
 
-fi = fromIntegral
+import BasicUtils
 
 generateFrequencyComponent :: [Float] -> [Float] -> Int -> Float -> Float
 generateFrequencyComponent ms ps i x
   | length ms < (i+1) || length ps < length ms || i < 0 = 0
   | i == 0 = head ms
-  | otherwise = (ms !! i) * sin ((fi i) * x + (ps !! i)*pi)
+  | otherwise = (ms !! i) * sin ((iToF i) * x + (ps !! i)*pi)
 
 generateSignal :: [Float] -> [Float] -> Float -> Float
 generateSignal (m:ms) (p:ps) x =
@@ -23,4 +23,4 @@ sample :: Int -> Float -> (Float -> Float) -> [(Float,Float)]
 sample n scale f = map (s f) domain
   where
         s f x = (x, f x)
-        domain = [scale * (((fi x) - (fi n / 2)) / (fi n)) | x <- [0..n]]
+        domain = [scale * (((iToF x) - (iToF n / 2)) / (iToF n)) | x <- [0..n]]

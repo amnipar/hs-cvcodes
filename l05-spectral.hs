@@ -17,6 +17,7 @@ import Text.Printf
 import ReadArgs
 
 import IOUtils
+import Images
 import DrawingUtils
 
 -- this is needed to remove the bandwidth label text from images

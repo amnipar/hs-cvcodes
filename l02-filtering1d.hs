@@ -17,6 +17,7 @@ import System.IO.Unsafe
 import Debug.Trace
 
 import BasicUtils
+import Images
 import DrawingUtils
 import Signals
 import Random
@@ -31,8 +32,8 @@ margin = 10
 -- plot x scale
 xscale = 4*pi
 -- plot y scale
-yscale = (sum amplitudes) - ymin -- 2 * (sum $ tail amplitudes)
-ymin = min 0 $ (head amplitudes) - (sum $ tail amplitudes) -- -(sum $ tail amplitudes)
+yscale = (sum amplitudes) - ymin
+ymin = min 0 $ (head amplitudes) - (sum $ tail amplitudes)
 -- standard deviation of the additive gaussian noise
 gaussianNoiseSigma = 1.0
 
@@ -41,6 +42,9 @@ gaussianNoiseSigma = 1.0
 mask :: [Float]
 mask = gaussianMask1D(maskSize)
 --mask = averageMask1D(maskSize)
+-- manually defined masks; take care of setting the maskSize correctly
+--mask = [0.1,0.2,0.4,0.2,0.1]
+--mask = [-2,-1,0,1,2]
 
 -- size of the convolution mask
 maskSize :: Int
@@ -64,9 +68,12 @@ main = do
     signal = sample (width-2*margin) xscale $ generateSignal amplitudes phases
     corrupted = corruptSignalWithGaussian gaussianNoiseSigma signal
     filtered = convolve1D mask maskCenter corrupted
-    cleanPoints = toPoints (width,height) margin (xscale,yscale) ymin signal
-    corruptedPoints = toPoints (width,height) margin (xscale,yscale) ymin corrupted
-    filteredPoints = toPoints (width,height) margin (xscale,yscale) ymin filtered
+    cleanPoints = 
+        signalToPixel (width,height) margin (xscale,yscale) ymin signal
+    corruptedPoints =
+        signalToPixel (width,height) margin (xscale,yscale) ymin corrupted
+    filteredPoints =
+        signalToPixel (width,height) margin (xscale,yscale) ymin filtered
   saveImage "filtered-signal.png" $
       plotLines blue 1 filteredPoints $
       plotLines red 1 corruptedPoints $

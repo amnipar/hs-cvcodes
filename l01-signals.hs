@@ -3,6 +3,7 @@ module Main where
 import CV.Image
 import CV.Pixelwise
 
+import Images
 import DrawingUtils
 import Random
 
@@ -31,7 +32,7 @@ phases =     [ 0.0, 1.0, 0.0, 0.0, 0.0,-0.5, 0.0, 0.0, 0.0, 0.0, 1.0]
 main = do
   let
     signal = sample (width-2*margin) xscale $ generateSignal amplitudes phases
-    points = toPoints (width,height) margin (xscale,yscale) ymin signal
+    points = signalToPixel (width,height) margin (xscale,yscale) ymin signal
     c1  = getComponentPoints 1
     c2  = getComponentPoints 2
     c3  = getComponentPoints 3
@@ -77,6 +78,7 @@ sample n scale f = map (s f) domain
         s f x = (x, f x)
         domain = [scale * (((fi x) - (fi n / 2)) / (fi n)) | x <- [0..n]]
 
-getComponentPoints c = toPoints (width,height) margin (xscale,yscale) ymin $
-  sample (width-2*margin) xscale $
-  generateFrequencyComponent amplitudes phases c
+getComponentPoints c = 
+  signalToPixel (width,height) margin (xscale,yscale) ymin $
+      sample (width-2*margin) xscale $
+      generateFrequencyComponent amplitudes phases c

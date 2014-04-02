@@ -1,22 +1,9 @@
 module Main where
 
 import CV.Image
-import CV.Pixelwise
-import qualified CV.ImageMath as IM
-import CV.ImageOp
-import CV.DFT as DFT
-import CV.Drawing
-import CV.Filters
-
-import Data.Function
-import Data.List
-import Control.Monad
-import Control.Applicative
-import System.Random
-import System.IO.Unsafe
-import Debug.Trace
 
 import BasicUtils
+import Images
 import DrawingUtils
 import Signals
 import Random
@@ -65,18 +52,15 @@ removeHighest n s = s1 ++ (map zeroAmp s2) ++ s3
     s3 = drop (c+n) s
 
 main = do
-  rng <- newRNG mt19937
-  setSeed rng 12349871235125
-  gs <- generateNGaussians rng gaussianNoiseSigma (width - 2*margin)
   let
     signal = sample (width-2*margin) xscale $ generateSignal amplitudes phases
-    corrupted = map yToFloat $ corruptGaussian (map yToDouble signal) gs
-    clean = toPoints (width,height) margin (xscale,yscale) ymin signal
-    points = toPoints (width,height) margin (xscale,yscale) ymin corrupted
-    ipoints = toPoints (width,height) margin (xscale,yscale) ymin isignal
+    corrupted = corruptSignalWithGaussian gaussianNoiseSigma signal
+    clean = signalToPixel (width,height) margin (xscale,yscale) ymin signal
+    points = signalToPixel (width,height) margin (xscale,yscale) ymin corrupted
+    ipoints = signalToPixel (width,height) margin (xscale,yscale) ymin isignal
     fsignal = dft1D corrupted
     psignal = removeHighest 160 $ dftToPolar1D fsignal
-    ppoints = toPoints (width,height) margin (xscale,yscale) ymin $
+    ppoints = signalToPixel (width,height) margin (xscale,yscale) ymin $
       zip (map fst signal) (map ln $ map snd3 psignal)
     isignal = zip (map fst corrupted) $ (idft1D 0 $ polarToDft1D psignal)
     y0 = ytop height margin yscale ymin 0
@@ -86,9 +70,3 @@ main = do
       plotLines green 2 clean $
       --plotLines (1,0,0) 1 noise $
       emptyColorImage (width,height) (1,1,1)
-
-yToFloat (x,y) = (x,realToFrac y)
-yToDouble (x,y) = (x,realToFrac y)
-
-amp n (_,a,_) = a / (iToF n)
-pha (_,_,p) = p

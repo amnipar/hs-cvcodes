@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
 module DrawingUtils
 ( black,white
 , blue,lblue,mblue,dblue,cblue
@@ -9,24 +8,22 @@ module DrawingUtils
 , ptox
 , ytop
 , ptoy
-, toPoints
-, toLines
+, signalToPixel
 , plotLines
 , plotSpikes
 , plotRects
-, naiveUpscale
-, emptyGrayImage
-, emptyColorImage
-, resizeImage
-, resizeImageFaithful
-, scaleImage
+, plotCircles
+, pointsToLines
+, pointToRect
+, pointsToRects
+, pointToCircle
+, pointsToCircles
 ) where
 
 import CV.Image
 import CV.Pixelwise
 import CV.ImageOp
 import CV.Drawing
-import CV.Transforms
 import Utils.Rectangle hiding (scale)
 
 import Data.Function
@@ -106,18 +103,10 @@ ptoy height margin scale miny p =
 --   plotting context (which involves the plot dimensions, margins, scales of
 --   coordinate axes and y axis min value; x axis is always centered at the
 --   origin).
-toPoints :: (Int,Int) -> Int -> (Float,Float) -> Float -> [(Float,Float)]
+signalToPixel :: (Int,Int) -> Int -> (Float,Float) -> Float -> [(Float,Float)]
     -> [(Int,Int)]
-toPoints (w,h) margin (xscale,yscale) miny s =
+signalToPixel (w,h) margin (xscale,yscale) miny s =
   map (\(x,y) -> (xtop w margin xscale x, ytop h margin yscale miny y)) s
-
--- | Converts a list of points to a list of lines; in practice, makes a line
---   from each consecutive pair of points such that lines will form a continuous
---   polyline.
-toLines :: [(Int,Int)] -> [((Int,Int),(Int,Int))] -> [((Int,Int),(Int,Int))]
-toLines [] ls = ls
-toLines (p1:[]) ls = ls
-toLines (p1:p2:ps) ls = [(p1,p2)] ++ (toLines (p2:ps) ls)
 
 -- | Draws a list of lines over the image. The lines are given in pixel
 --   coordinates.
@@ -125,7 +114,7 @@ plotLines :: (Float,Float,Float) -> Int -> [(Int,Int)]
     -> Image RGB D32 -> Image RGB D32
 plotLines color size points image =
   image <## [lineOp color size (x1,y1) (x2,y2)
-            | ((x1,y1),(x2,y2)) <- toLines points []]
+            | ((x1,y1),(x2,y2)) <- pointsToLines points]
 
 -- | Plots a list of points as spikes with a vertical line and a small circle at
 --   the top end. The points are given in pixel coordinates.
@@ -139,51 +128,48 @@ plotPoints :: (Float,Float,Float) -> Int -> [(Int,Int)]
     -> Image RGB Float -> Image RGB Float
 plotPoints color size points image = image
 
+-- | Plots a list of rectangles over the image. The rectangles are given as the
+--   top left corner point and (width,height) pair, in pixel coordinates.
 plotRects :: (Float,Float,Float) -> Int -> [((Int,Int),(Int,Int))]
     -> Image RGB Float -> Image RGB Float
 plotRects color size rects image =
   image <## [rectOp color s (mkRectangle p1 p2) | (p1,p2) <- rects]
   where
-        s | size > 0 = size
-          | otherwise = (-1)
+    s | size > 0 = size
+      | otherwise = (-1)
 
+-- | Plots a list of circles over the image. The circles are given as a point
+--   and a radius, in pixel coordinates.
 plotCircles :: (Float,Float,Float) -> Int -> [((Int,Int),Int)]
     -> Image RGB Float -> Image RGB Float
-plotCircles color size cirles image = image
-
--- | Creates a naively upscaled version of the image by replicating the pixels
---   s times in both directions.
-naiveUpscale :: Int -> Image GrayScale D32 -> Image GrayScale D32
-naiveUpscale s image = imageFromFunction (nw,nh) f
+plotCircles color size circles image =
+  image <## [circleOp color p r s | (p,r) <- circles]
   where
-    (w,h) = getSize image
-    nw = s*w
-    nh = s*h
-    f (x,y) = getPixel (x',y') image
-      where
-        x' = x `div` s
-        y' = y `div` s
+    s | size > 0 = Stroked size
+      | otherwise = Filled
 
--- | Creates an empty grayscale image of the specific shade. Can be used as a
---   starting point for drawing operations.
-emptyGrayImage :: (Int,Int) -> D32 -> Image GrayScale Float
-emptyGrayImage (w,h) color = imageFromFunction (w,h) (const color)
+-- | Converts a list of points to a list of lines; in practice, makes a line
+--   from each consecutive pair of points such that lines will form a continuous
+--   polyline.
+pointsToLines :: [(Int,Int)] -> [((Int,Int),(Int,Int))]
+pointsToLines ps = pToL ps []
+  where
+    pToL [] ls = ls
+    pToL (p1:[]) ls = ls
+    pToL (p1:p2:ps) ls = [(p1,p2)] ++ (pToL (p2:ps) ls)
 
--- | Creates an empty color image of the specific shade. Can be used as a
---   starting point for drawing operations.
-emptyColorImage :: (Int,Int) -> (Float,Float,Float) -> Image RGB Float
-emptyColorImage (w,h) color = imageFromFunction (w,h) (const color)
+pointToRect :: Int -> ((Int,Int),Float) -> ((Int,Int),(Int,Int))
+pointToRect r ((x,y),_) = ((x-r,y-r),(2*r+1,2*r+1))
 
--- | Forces the image to given size, not considering the aspect ratio.
-resizeImage :: (CreateImage (Image c Float)) =>
-  (Int,Int) -> Image c Float -> Image c Float
-resizeImage size image = scaleToSize Cubic False size image
+-- | Converts a list of points to a list of rects with the specified radius
+--   around each point.
+pointsToRects :: Int -> [((Int,Int),Float)] -> [((Int,Int),(Int,Int))]
+pointsToRects s ps = map (pointToRect s) ps
 
--- | Resize the image to given size, preserving the aspect ratio.
-resizeImageFaithful :: (CreateImage (Image c Float)) =>
-  (Int,Int) -> Image c Float -> Image c Float
-resizeImageFaithful size image = scaleToSize Cubic True size image
+pointToCircle :: Int -> ((Int,Int),Float) -> ((Int,Int),Int)
+pointToCircle r ((x,y),_) = ((x,y),r)
 
-scaleImage :: (CreateImage (Image c Float)) =>
-  (Float,Float) -> Image c Float -> Image c Float
-scaleImage ratio image = scale Cubic ratio image
+-- | Converts a list of points to a list of circles with the specified radius
+--   around each point.
+pointsToCircles :: Int -> [((Int,Int),Float)] -> [((Int,Int),Int)]
+pointsToCircles r ps = map (pointToCircle r) ps

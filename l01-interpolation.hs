@@ -4,6 +4,7 @@ module Main where
 import CV.Image
 import CV.Pixelwise
 
+import Images
 import BasicUtils
 import DrawingUtils
 import Signals
@@ -49,14 +50,15 @@ main = do
     outputFile = maybe "result.png" id output
     sampleCount = maybe 40 id samples
     signal = sample (width-2*margin) xscale $ generateSignal amplitudes phases
-    points = toPoints (width,height) margin (xscale,yscale) ymin signal
+    points = signalToPixel (width,height) margin (xscale,yscale) ymin signal
     sampled = sample sampleCount xscale $ generateSignal amplitudes phases
-    samplePoints = toPoints (width,height) margin (xscale,yscale) ymin sampled
+    samplePoints =
+        signalToPixel (width,height) margin (xscale,yscale) ymin sampled
     y0 = ytop height margin yscale ymin 0
     interpolated = sample (width-2*margin) xscale $
         interpolateSinc sampled xscale
-    interpolatedPoints = toPoints (width,height) margin (xscale,yscale) 0 $
-        interpolated
+    interpolatedPoints =
+        signalToPixel (width,height) margin (xscale,yscale) 0 interpolated
   case mode of
     Just "linear" ->
         saveImage outputFile $
