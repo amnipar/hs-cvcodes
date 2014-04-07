@@ -30,6 +30,7 @@ l03-dft.hs            Fourier operations on images using FFT.
 l03-gabor.hs          Applying Gabor filters on images.
 l04-regionstat.hs     Statistical analysis of image regions.
 l04-histogram.hs      Image histograms.
+l04-otsu.hs           Image thresholding with Otsu's method.
 l04-eigenimages.hs    Simple object identification using PCA and kNN.
 l05-spectral.hs       Spectral image analysis.
 
@@ -43,6 +44,7 @@ Filters.hs        Creating filters for 1D and 2D signals.
 Fourier.hs        Naive Fourier transform and related operations for 1D and 2D.
 Gabor.hs          Gabor functions, for creating Gabor filters.
 Gaussian.hs       Gaussian functions, for creating Gaussian filters.
+Histogram.hs      Accumulating histograms of values, comparing histograms (soon)
 Images.hs         Generating various test images.
 IOUtils.hs        Utilities for IO, such as reading and writing files.
 Morphology.hs     Morphological and hit-or-miss operations for Float images.
