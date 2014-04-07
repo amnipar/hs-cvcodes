@@ -13,6 +13,7 @@ module DrawingUtils
 , plotSpikes
 , plotRects
 , plotCircles
+, plotHistogram
 , pointsToLines
 , pointToRect
 , pointsToRects
@@ -147,6 +148,25 @@ plotCircles color size circles image =
   where
     s | size > 0 = Stroked size
       | otherwise = Filled
+
+-- | Plots a histogram onto the given image.
+plotHistogram :: (Float,Float,Float) -> Int -> [(Float,Float)]
+    -> Image RGB Float -> Image RGB Float
+plotHistogram color margin bins image =
+  plotRects color 0 (map binToRect (zip bins $ map iToF [0..n-1])) image
+  where
+    n = length bins
+    (w,h) = getSize image
+    xscale = iToF n
+    xscale' = xscale / 2
+    yscale = maximum $ map snd bins
+    miny = 0
+    binToRect ((_,c),i) = ((x1,y1),(x2-x1,y2-y1))
+      where
+        x1 = xtop w margin xscale (i - xscale')
+        y1 = ytop h margin yscale miny c
+        x2 = xtop w margin xscale (i+1 - xscale')
+        y2 = ytop h margin yscale miny 0
 
 -- | Converts a list of points to a list of lines; in practice, makes a line
 --   from each consecutive pair of points such that lines will form a continuous

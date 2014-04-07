@@ -10,6 +10,7 @@ module Images
 , diamondGrayImage
 , powImage
 , getPixels
+, getValues
 , naiveUpscale
 , resizeImage
 , resizeImageFaithful
@@ -66,7 +67,7 @@ squareGrayImage :: Int -> Int -> Float -> Float -> Image GrayScale Float
 squareGrayImage s r fc bc = imageFromFunction (s,s) f
   where
     c = (iToF s) / 2
-    f (x,y) | abs ((iToF x)-c+0.5) < (iToF r) && 
+    f (x,y) | abs ((iToF x)-c+0.5) < (iToF r) &&
               abs ((iToF y)-c+0.5) < (iToF r)    = fc
             | otherwise                          = bc
 
@@ -98,6 +99,11 @@ getPixels image =
             | y<-[0..h-1]] | x <- [0..w-1]]
   where
     (w,h) = getSize image
+
+-- | Turns an image into a list of values.
+getValues :: Image GrayScale Float -> [Float]
+getValues image = [getPixel (x,y) image | x <- [0..w-1], y <- [0..h-1]]
+  where (w,h) = getSize image
 
 -- | Creates a naively upscaled version of the image by replicating the pixels
 --   s times in both directions.
