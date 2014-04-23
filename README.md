@@ -33,6 +33,8 @@ l04-histogram.hs      Image histograms.
 l04-otsu.hs           Image thresholding with Otsu's method.
 l04-eigenimages.hs    Simple object identification using PCA and kNN.
 l05-spectral.hs       Spectral image analysis.
+l07-corners.hs        Corner detection with Harris and Hessian.
+l08-normcut.hs        Normalized cuts for image segmentation.
 
 The following are utility modules containing commonly used functions and types.
 
