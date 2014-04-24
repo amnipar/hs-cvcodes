@@ -1,9 +1,12 @@
 module Thresholding
 ( threshold
+, quantizeAngle4
 , tFromMeanDev
 , tOtsu
 , convZeroOneToMinusPlus
 , collectPoints
+, relativeThresholdPoints
+, relativeThresholdPoints2
 ) where
 
 import CV.Image
@@ -18,12 +21,25 @@ import Data.Ord
 
 -- | Thresholds an image into a two-value image using the given (low,high) and
 --   threshold values.
-threshold :: (Float,Float) -> Float -> Image GrayScale D32
-    -> Image GrayScale D32
+threshold :: (Float,Float) -> Float -> Image GrayScale Float
+    -> Image GrayScale Float
 threshold m t image = mapImage (clamp m t) image
   where
     clamp (lower,higher) t v | v < t     = lower
                              | otherwise = higher
+
+pi_3_4 = 3 * pi / 4
+pi_1_2 = pi / 2
+pi_1_4 = pi / 4
+
+quantizeAngle4 :: Image GrayScale Float -> Image GrayScale Float
+quantizeAngle4 image = mapImage q4 image
+  where
+    q4 v | v > pi_3_4  = 0
+         | v > pi_1_4  = 1
+         | v > -pi_1_4 = 2
+         | v > -pi_3_4 = 3
+         | otherwise   = 0
 
 -- | Finds the threshold value using mean-dev method
 tFromMeanDev :: Float -> Float -> Image GrayScale D32 -> Float
@@ -57,3 +73,24 @@ collectPoints t image = filter (higherThan t) $ getPixels image
   where
     higherThan t (_,v) | v > t     = True
                        | otherwise = False
+
+-- | Filter out points with values that are weaker than factor * maximum value
+relativeThresholdPoints :: Float -> [((Int,Int),Float)] -> [((Int,Int),Float)]
+relativeThresholdPoints factor cs = filter ((>t) . snd) cs
+  where
+    m = maximum $ map snd cs
+    t = factor * m
+
+-- Filter out points with pairs of values that are weaker than factor * maximum
+-- of both values
+relativeThresholdPoints2 :: Float -> [((Int,Int),(Float,Float))]
+    -> [((Int,Int),(Float,Float))]
+relativeThresholdPoints2 factor cs =
+  filter (\(_,(v1,v2)) -> (v1 > t1) && (v2 > t2)) cs
+  where
+    v1 (_,(v,_)) = v
+    v2 (_,(_,v)) = v
+    m1 = maximum $ map v1 cs
+    m2 = maximum $ map v2 cs
+    t1 = factor * m1
+    t2 = factor * m2

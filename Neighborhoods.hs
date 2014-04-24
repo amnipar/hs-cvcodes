@@ -1,0 +1,130 @@
+module Neighborhoods
+( n4
+, n8
+, ns5
+, create4Neighborhood
+, create8Neighborhood
+, createS5Neighborhood
+, getNeighborhood
+, get4Neighborhood
+, get8Neighborhood
+, getS5Neighborhood
+, filterNeighborhood
+, filterNeighborhood2
+, filterNeighborhoodPair
+) where
+
+import CV.Image
+
+-- 4-neighborhood: coordinates to the four directly adjacent pixels
+--  x
+-- xox
+--  x
+n4 :: (Int,Int) -> (Int,Int) -> [(Int,Int)]
+n4 (w,h) (x,y) = nn $ wn $ en $ sn []
+  where
+    nn ns | y > 0     = (x,y-1):ns
+          | otherwise = ns
+    wn ns | x > 0     = (x-1,y):ns
+          | otherwise = ns
+    en ns | x < w-1   = (x+1,y):ns
+          | otherwise = ns
+    sn ns | y < h-1   = (x,y+1):ns
+          | otherwise = ns
+
+-- 8-neighborhood: coordinates to all eight surrounding pixels
+-- xxx
+-- xox
+-- xxx
+n8 :: (Int,Int) -> (Int,Int) -> [(Int,Int)]
+n8 (w,h) (x,y) = nwn $ nn $ nen $ en $ sen $ sn $ swn $ wn []
+  where
+    nwn ns | x > 0   && y > 0   = (x-1,y-1):ns
+           | otherwise          = ns
+    nn  ns |            y > 0   = (x,y-1):ns
+           | otherwise          = ns
+    nen ns | x < w-1 && y > 0   = (x+1,y-1):ns
+           | otherwise          = ns
+    en  ns | x < w-1            = (x+1,y):ns
+           | otherwise          = ns
+    sen ns | x < w-1 && y < h-1 = (x+1,y+1):ns
+           | otherwise          = ns
+    sn  ns |            y < h-1 = (x,y+1):ns
+           | otherwise          = ns
+    swn ns | x > 0   && y < h-1 = (x-1,y+1):ns
+           | otherwise          = ns
+    wn  ns | x > 0              = (x-1,y):ns
+           | otherwise          = ns
+
+-- a spherical neighborhood with diameter 5
+--  xxx
+-- xxxxx
+-- xxoxx
+-- xxxxx
+--  xxx
+
+ns5 :: (Int,Int) -> (Int,Int) -> [(Int,Int)]
+ns5 (w,h) (x,y) = filter valid $
+  [(x-1,y-2),(x, y-2),(x+1,y-2),
+   (x-2,y-1),(x-1,y-1),(x,y-1),(x+1,y-1),(x+2,y-1),
+   (x-2,y),(x-1,y),(x+1,y),(x+2,y),
+   (x-2,y+1),(x-1,y+1),(x,y+1),(x+1,y+1),(x+2,y+1),
+   (x-1,y+2),(x,y+2),(x+1,y+2)]
+  where
+    valid (x,y) = not $ (x < 0) || (x >= w) || (y < 0) || (y >= h)
+
+create4Neighborhood (w,h) = n4 (w,h)
+create8Neighborhood (w,h) = n8 (w,h)
+createS5Neighborhood (w,h) = ns5 (w,h)
+
+getNeighborhood :: [(Int,Int)] -> Image GrayScale Float -> (Int,Int)
+  -> (Float,[Float])
+getNeighborhood n i (x,y) = (getPixel (x,y) i, map (p i) n)
+  where
+    p img (x,y) = getPixel (x,y) img
+
+get4Neighborhood img (x,y) = getNeighborhood (n4 (w,h) (x,y)) img (x,y)
+  where
+    (w,h) = getSize img
+
+get8Neighborhood img (x,y) = getNeighborhood (n8 (w,h) (x,y)) img (x,y)
+  where
+    (w,h) = getSize img
+
+getS5Neighborhood img (x,y) = getNeighborhood (ns5 (w,h) (x,y)) img (x,y)
+  where
+    (w,h) = getSize img
+
+filterNeighborhood :: ((Int,Int) -> (Int,Int) -> [(Int,Int)])
+    -> ((Float,[Float]) -> Bool)
+    -> Image GrayScale D32 -> [((Int,Int),Float)]
+filterNeighborhood neighborhood cond img =
+  map (\(p,(v,n)) -> (p,v)) $ filter (cond . snd) $
+    [((i,j),(n i j)) | j <- [0..h-1] , i <- [0..w-1]]
+  where
+    n x y = getNeighborhood (neighborhood (w,h) (x,y)) img (x,y)
+    (w,h) = getSize img
+
+filterNeighborhood2 :: ((Int,Int) -> (Int,Int) -> [(Int,Int)])
+    -> ((Float,[Float]) -> Bool)
+    -> (Image GrayScale D32, Image GrayScale D32) -> [((Int,Int),(Float,Float))]
+filterNeighborhood2 neighborhood cond (img1,img2) =
+  map (\(p,(v1,_),(v2,_)) -> (p,(v1,v2))) $
+    filter (\(_,a,b) -> (cond a) && (cond b)) $
+      [ ((i,j),(n1 i j),(n2 i j)) | j <- [0..h-1]  , i <- [0..w-1] ]
+  where
+    n1 x y = getNeighborhood (neighborhood (w,h) (x,y)) img1 (x,y)
+    n2 x y = getNeighborhood (neighborhood (w,h) (x,y)) img2 (x,y)
+    (w,h) = getSize img1
+
+filterNeighborhoodPair :: ((Int,Int) -> (Int,Int) -> [(Int,Int)])
+    -> (((Float,[Float]),(Float,[Float])) -> Bool)
+    -> (Image GrayScale D32, Image GrayScale D32) -> [((Int,Int),(Float,Float))]
+filterNeighborhoodPair neighborhood cond (img1,img2) =
+  map (\(p,(v1,_),(v2,_)) -> (p,(v1,v2))) $
+    filter (\(_,a,b) -> cond (a,b)) $
+      [ ((i,j),(n1 i j),(n2 i j)) | j <- [0..h-1]  , i <- [0..w-1] ]
+  where
+    n1 x y = getNeighborhood (neighborhood (w,h) (x,y)) img1 (x,y)
+    n2 x y = getNeighborhood (neighborhood (w,h) (x,y)) img2 (x,y)
+    (w,h) = getSize img1

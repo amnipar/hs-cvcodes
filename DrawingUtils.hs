@@ -178,18 +178,18 @@ pointsToLines ps = pToL ps []
     pToL (p1:[]) ls = ls
     pToL (p1:p2:ps) ls = [(p1,p2)] ++ (pToL (p2:ps) ls)
 
-pointToRect :: Int -> ((Int,Int),Float) -> ((Int,Int),(Int,Int))
+pointToRect :: Int -> ((Int,Int),a) -> ((Int,Int),(Int,Int))
 pointToRect r ((x,y),_) = ((x-r,y-r),(2*r+1,2*r+1))
 
 -- | Converts a list of points to a list of rects with the specified radius
 --   around each point.
-pointsToRects :: Int -> [((Int,Int),Float)] -> [((Int,Int),(Int,Int))]
+pointsToRects :: Int -> [((Int,Int),a)] -> [((Int,Int),(Int,Int))]
 pointsToRects s ps = map (pointToRect s) ps
 
-pointToCircle :: Int -> ((Int,Int),Float) -> ((Int,Int),Int)
+pointToCircle :: Int -> ((Int,Int),a) -> ((Int,Int),Int)
 pointToCircle r ((x,y),_) = ((x,y),r)
 
 -- | Converts a list of points to a list of circles with the specified radius
 --   around each point.
-pointsToCircles :: Int -> [((Int,Int),Float)] -> [((Int,Int),Int)]
+pointsToCircles :: Int -> [((Int,Int),a)] -> [((Int,Int),Int)]
 pointsToCircles r ps = map (pointToCircle r) ps
