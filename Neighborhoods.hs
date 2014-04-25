@@ -2,6 +2,8 @@ module Neighborhoods
 ( n4
 , n8
 , ns5
+, ne8
+, nes5
 , create4Neighborhood
 , create8Neighborhood
 , createS5Neighborhood
@@ -15,6 +17,9 @@ module Neighborhoods
 ) where
 
 import CV.Image
+
+type Neighborhood = (Float,[Float])
+type NeighborhoodFunction = (Int,Int) -> (Int,Int) -> [(Int,Int)]
 
 -- 4-neighborhood: coordinates to the four directly adjacent pixels
 --  x
@@ -77,6 +82,33 @@ create4Neighborhood (w,h) = n4 (w,h)
 create8Neighborhood (w,h) = n8 (w,h)
 createS5Neighborhood (w,h) = ns5 (w,h)
 
+-- Edge 8-neighborhood based on quantized gradient direction acquired with
+-- quantizeAngle4. Gets the two neighbors across the direction of edge.
+ne8 :: Image GrayScale Float -> (Int,Int) -> (Int,Int) -> [(Int,Int)]
+ne8 ang (w,h) (x,y)
+  | x <= 0 || x >= w-1 || y <= 0 || y >= h-1 = []
+  | a == 1 = [(x-1,y),(x+1,y)]
+  | a == 2 = [(x-1,y-1),(x+1,y+1)]
+  | a == 3 = [(x,y-1),(x,y+1)]
+  | a == 4 = [(x-1,y+1),(x+1,y-1)]
+  | otherwise = [] -- a could be 0 or something else
+  where
+    a = getPixel (x,y) ang
+
+
+-- Edge s5-neighborhood based on quantized gradient direction acquired with
+-- quantizeAngle4. Gets the two neighbors across the direction of edge.
+nes5 :: Image GrayScale Float -> (Int,Int) -> (Int,Int) -> [(Int,Int)]
+nes5 ang (w,h) (x,y)
+  | x <= 1 || x >= w-2 || y <= 1 || y >= h-2 = []
+  | a == 1 = [(x-2,y),(x-1,y),(x+1,y),(x+2,y)]
+  | a == 2 = [(x-2,y-2),(x-1,y-1),(x+1,y+1),(x+2,y+2)]
+  | a == 3 = [(x,y-2),(x,y-1),(x,y+1),(x,y+2)]
+  | a == 4 = [(x-2,y+2),(x-1,y+1),(x+1,y-1),(x+2,y-2)]
+  | otherwise = [] -- a could be 0 or something else
+  where
+    a = getPixel (x,y) ang
+
 getNeighborhood :: [(Int,Int)] -> Image GrayScale Float -> (Int,Int)
   -> (Float,[Float])
 getNeighborhood n i (x,y) = (getPixel (x,y) i, map (p i) n)
@@ -117,14 +149,14 @@ filterNeighborhood2 neighborhood cond (img1,img2) =
     n2 x y = getNeighborhood (neighborhood (w,h) (x,y)) img2 (x,y)
     (w,h) = getSize img1
 
-filterNeighborhoodPair :: ((Int,Int) -> (Int,Int) -> [(Int,Int)])
-    -> (((Float,[Float]),(Float,[Float])) -> Bool)
+filterNeighborhoodPair :: (NeighborhoodFunction, NeighborhoodFunction)
+    -> ((Neighborhood,Neighborhood) -> Bool)
     -> (Image GrayScale D32, Image GrayScale D32) -> [((Int,Int),(Float,Float))]
-filterNeighborhoodPair neighborhood cond (img1,img2) =
+filterNeighborhoodPair (n1,n2) cond (img1,img2) =
   map (\(p,(v1,_),(v2,_)) -> (p,(v1,v2))) $
     filter (\(_,a,b) -> cond (a,b)) $
-      [ ((i,j),(n1 i j),(n2 i j)) | j <- [0..h-1]  , i <- [0..w-1] ]
+      [ ((i,j),(pn1 i j),(pn2 i j)) | j <- [0..h-1]  , i <- [0..w-1] ]
   where
-    n1 x y = getNeighborhood (neighborhood (w,h) (x,y)) img1 (x,y)
-    n2 x y = getNeighborhood (neighborhood (w,h) (x,y)) img2 (x,y)
+    pn1 x y = getNeighborhood (n1 (w,h) (x,y)) img1 (x,y)
+    pn2 x y = getNeighborhood (n2 (w,h) (x,y)) img2 (x,y)
     (w,h) = getSize img1

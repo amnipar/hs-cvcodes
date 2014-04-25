@@ -89,7 +89,8 @@ kernel2D f (cx,cy) (sx,sy) = [f (x,y) | y <- [y1..y2] , x <- [x1..x2]]
 --   be in the point to the right and below from the actual center. If this is
 --   not desired, use the kernel2D function manually.
 createMask2D :: ((Int,Int) -> Float) -> Int -> Matrix Float
-createMask2D f s = M.fromList (s,s) $ kernel2D f (getMaskCenter2D s) (s,s)
+createMask2D f s = M.transpose $ M.fromList (s,s) $
+    kernel2D f (getMaskCenter2D s) (s,s)
   where
     r = getMaskRadius s
 

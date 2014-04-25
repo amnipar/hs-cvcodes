@@ -6,6 +6,7 @@ module Gaussian
 , gaussian2Ddx2
 , gaussian2Ddy2
 , gaussian2Ddxdy
+, laplacianOfGaussian
 ) where
 
 import BasicUtils
@@ -20,25 +21,30 @@ gaussian2D s (x,y) =
 
 gaussian2Ddx :: Float -> (Int,Int) -> Float
 gaussian2Ddx s (x,y) =
-  (-((iToF x) / (2 * pi * s**4))) * 
+  -(-((iToF x) / (2 * pi * s**4))) *
     exp (-(((iToF x)**2 + (iToF y)**2) / (2 * s**2)))
 
 gaussian2Ddy :: Float -> (Int,Int) -> Float
-gaussian2Ddy s (x,y) = 
-  (-((iToF y) / (2 * pi * s**4))) * 
+gaussian2Ddy s (x,y) =
+  (-((iToF y) / (2 * pi * s**4))) *
     exp(-(((iToF x)**2 + (iToF y)**2) / (2 * s**2)))
 
 gaussian2Ddx2 :: Float -> (Int,Int) -> Float
-gaussian2Ddx2 s (x,y) = 
-  (-1 + (iToF x)**2/s**2) / (2 * pi * s**4) * 
+gaussian2Ddx2 s (x,y) =
+  (-1 + (iToF x)**2/s**2) / (2 * pi * s**4) *
     exp (-(((iToF x)**2 + (iToF y)**2) / (2 * s**2)))
 
 gaussian2Ddy2 :: Float -> (Int,Int) -> Float
-gaussian2Ddy2 s (x,y) = 
-  (-1 + (iToF y)**2/s**2) / (2 * pi * s**4) * 
+gaussian2Ddy2 s (x,y) =
+  (-1 + (iToF y)**2/s**2) / (2 * pi * s**4) *
     exp (-(((iToF x)**2 + (iToF y)**2) / (2 * s**2)))
 
 gaussian2Ddxdy :: Float -> (Int,Int) -> Float
-gaussian2Ddxdy s (x,y) = 
+gaussian2Ddxdy s (x,y) =
   ((iToF x) * (iToF y)) / (2 * pi * s**6) *
+    exp (-(((iToF x)**2 + (iToF y)**2) / (2 * s**2)))
+
+laplacianOfGaussian :: Float -> (Int,Int) -> Float
+laplacianOfGaussian s (x,y) =
+  -(1 / (pi * s**4)) * (1 - (((iToF x)**2 + (iToF y)**2) / (2 * s**2))) *
     exp (-(((iToF x)**2 + (iToF y)**2) / (2 * s**2)))

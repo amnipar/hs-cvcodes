@@ -3,6 +3,9 @@ module DrawingUtils
 , blue,lblue,mblue,dblue,cblue
 , green,lgreen,mgreen,dgreen,cgreen
 , red,lred,mred,dred,cred
+, cyan,lcyan,mcyan,dcyan,ccyan
+, magenta,lmagenta,mmagenta,dmagenta,cmagenta
+, yellow,lyellow,myellow,dyellow,cyellow
 , gray,dgray,lgray,cgray
 , xtop
 , ptox
@@ -40,32 +43,62 @@ white  = (1,1,1)
 
 -- shades of blue
 dblue,mblue,lblue,blue :: (Float,Float,Float)
-dblue       = (0.25,0.00,0.00)
-mblue       = (0.50,0.00,0.00)
-lblue       = (0.75,0.00,0.00)
-blue        = (1.00,0.00,0.00)
+dblue         = (0.25,0.00,0.00)
+mblue         = (0.50,0.00,0.00)
+lblue         = (0.75,0.00,0.00)
+blue          = (1.00,0.00,0.00)
 -- a custom blue
 cblue :: Float -> (Float,Float,Float)
-cblue cval  = (cval,0.00,0.00)
+cblue cval    = (cval,0.00,0.00)
 
 -- shades of green
 dgreen,mgreen,lgreen,green :: (Float,Float,Float)
-dgreen      = (0.00,0.25,0.00)
-mgreen      = (0.00,0.50,0.00)
-lgreen      = (0.00,0.75,0.00)
-green       = (0.00,1.00,0.00)
+dgreen        = (0.00,0.25,0.00)
+mgreen        = (0.00,0.50,0.00)
+lgreen        = (0.00,0.75,0.00)
+green         = (0.00,1.00,0.00)
 -- a custom green
 cgreen :: Float -> (Float,Float,Float)
-cgreen cval = (0.00,cval,0.00)
+cgreen cval   = (0.00,cval,0.00)
 
 dred,mred,lred,red :: (Float,Float,Float)
-dred        = (0.00,0.00,0.25)
-mred        = (0.00,0.00,0.50)
-lred        = (0.00,0.00,0.75)
-red         = (0.00,0.00,1.00)
+dred          = (0.00,0.00,0.25)
+mred          = (0.00,0.00,0.50)
+lred          = (0.00,0.00,0.75)
+red           = (0.00,0.00,1.00)
 -- a custom red
 cred :: Float -> (Float,Float,Float)
-cred cval   = (0.00,0.00,cval)
+cred cval     = (0.00,0.00,cval)
+
+-- shades of cyan
+dcyan,mcyan,lcyan,cyan :: (Float,Float,Float)
+dcyan         = (0.25,0.25,0.00)
+mcyan         = (0.50,0.50,0.00)
+lcyan         = (0.75,0.75,0.00)
+cyan          = (1.00,1.00,0.00)
+-- a custom cyan
+ccyan :: Float -> (Float,Float,Float)
+ccyan cval    = (cval,cval,0.00)
+
+-- shades of magenta
+dmagenta,mmagenta,lmagenta,magenta :: (Float,Float,Float)
+dmagenta      = (0.25,0.00,0.25)
+mmagenta      = (0.50,0.00,0.50)
+lmagenta      = (0.75,0.00,0.75)
+magenta       = (1.00,0.00,1.00)
+-- a custom cyan
+cmagenta :: Float -> (Float,Float,Float)
+cmagenta cval = (cval,0.00,cval)
+
+-- shades of yellow
+dyellow,myellow,lyellow,yellow :: (Float,Float,Float)
+dyellow       = (0.00,0.25,0.25)
+myellow       = (0.00,0.50,0.50)
+lyellow       = (0.00,0.75,0.75)
+yellow        = (0.00,1.00,1.00)
+-- a custom yellow
+cyellow :: Float -> (Float,Float,Float)
+cyellow cval = (0.00,cval,cval)
 
 -- shades of gray
 dgray,lgray,gray :: (Float,Float,Float)

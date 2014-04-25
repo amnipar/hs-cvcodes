@@ -1,13 +1,14 @@
 module Main where
 
 import CV.Image
-import CV.ImageMath as IM
+import CV.ImageMath as IM hiding (div)
 import CV.ImageMathOp
 import CV.Filters
 import CV.Pixelwise
 import CV.ColourUtils
 import CV.Operations
 
+import DrawingUtils
 import Filters
 import Gaussian
 import Thresholding
@@ -17,15 +18,17 @@ import ReadArgs
 import Control.Monad
 import System.IO.Unsafe
 
-sigma = 1
+sigma = 0.8
 -- mask should fit 6 sigma
-size = 7
+size = 5
 center = getMaskCenter2D size
+maskg = createMask2D (gaussian2D sigma) size
 maskdx = createMask2D (gaussian2Ddx sigma) size
 maskdy = createMask2D (gaussian2Ddy sigma) size
 maskdx2 = createMask2D (gaussian2Ddx2 sigma) size
 maskdy2 = createMask2D (gaussian2Ddy2 sigma) size
 maskdxdy = createMask2D (gaussian2Ddxdy sigma) size
+masklog = createMask2D (laplacianOfGaussian sigma) size
 
 preventZero image = mapImage c image
   where
@@ -53,62 +56,92 @@ imageDerivatives2 image =
     dxdy = convolve2D maskdxdy center image
     ilog = dx2 #+ dy2
 
-gmag image = stretchHistogram $ IM.sqrt $ (dx #* dx) #+ (dy #* dy)
+unsharp image = unitNormalize $ image #- gimage
+  where
+    gimage = convolve2D maskg center image
+
+gmag image = IM.sqrt $ (dx #* dx) #+ (dy #* dy)
   where
     dx = convolve2D maskdx center image
     dy = convolve2D maskdy center image
 
-gang image = unitNormalize $ quantizeAngle4 $ IM.atan2 dy $ preventZero dx
+gang image = quantizeAngle4 $ IM.atan2 dy $ preventZero dx
   where
     dx = convolve2D maskdx center image
     dy = convolve2D maskdy center image
 
-ilog image = dx2 #+ dy2
+grad image = (gmag,gang)
   where
-    dx2 = convolve2D maskdx2 center image
-    dy2 = convolve2D maskdy2 center image
+    gmag = IM.sqrt $ (dx #* dx) #+ (dy #* dy)
+    gang = quantizeAngle4 $ IM.atan2 dy $ preventZero dx
+    dx = convolve2D maskdx center image
+    dy = convolve2D maskdy center image
+
+ilog image = convolve2D masklog center image
 
 crossesZero (_,ns) = (minimum ns) < 0 && (maximum ns) > 0
 
 crossesZeroMax ((v,ns1),(_,ns2)) =
-  (minimum ns2) < 0 && (maximum ns2) > 0 && v >= (maximum ns1)
+  (minimum ns2) < 0 && (maximum ns2) > 0 && maxEdge (v,ns1)
+
+maxEdge (v,[]) = False
+maxEdge (v,ns) = v >= (maximum ns)
 
 valueToMax ((x,y),_) = ((x,y),1)
-valueToMax2 ((x,y),(_,_)) = ((x,y),1)
+valueToColor c ((x,y),_) = ((x,y),c)
 
-zeroCrossings image = drawPixels (w,h) $
-  map valueToMax $ filterNeighborhood n8 crossesZero image
-  where
-    (w,h) = getSize image
+zeroCrossings image =
+  filterNeighborhood n8 crossesZero image
 
-maxZeroCrossings gmag ilog = drawPixels (w,h) $
-  map valueToMax2 $ filterNeighborhoodPair ns5 crossesZeroMax $ (gmag,ilog)
-  where
-    (w,h) = getSize gmag
+maxZeroCrossings mag ang log =
+  filterNeighborhoodPair ((nes5 ang),ns5) crossesZeroMax (mag,log)
 
-drawPixels :: (Int,Int) -> [((Int,Int),Float)] -> Image GrayScale Float
-drawPixels size points = unsafePerformIO $ do
-  mimg <- toMutable $ empty size
+gradientExtrema mag ang =
+  filterNeighborhood (nes5 ang) maxEdge mag
+
+drawPixelsGray :: Image GrayScale Float -> [((Int,Int),Float)]
+    -> Image GrayScale Float
+drawPixelsGray img points = unsafePerformIO $ do
+  mimg <- toMutable img
+  forM_ points $ \(p,v) -> setPixel p v mimg
+  fromMutable mimg
+
+drawPixelsColor :: Image RGB Float -> [((Int,Int),(Float,Float,Float))]
+    -> Image RGB Float
+drawPixelsColor img points = unsafePerformIO $ do
+  mimg <- toMutable img
   forM_ points $ \(p,v) -> setPixel p v mimg
   fromMutable mimg
 
 usage :: String
-usage = "usage: l07-edges [fst|snd|mag|ang|zero|maxzero] source target"
+usage = "usage: l07-edges [fst|snd|mag|ang|ext|zero|maxzero] source target"
 
 main = do
   (mode,sourceImage,targetImage) <- readArgs
   img <- readFromFile sourceImage
+  let
+      (mag,ang) = grad img
+      tmag = threshold (0,1) 0.05 mag
+      mag' = tmag #* mag
+      ang' = tmag #* ang
   case mode of
+    "unsharp" ->
+      saveImage targetImage $ unsharp img
     "fst" ->
-      saveImage targetImage $ montage (1,2) 2 $ imageDerivatives1 img
+      saveImage targetImage $ montage (2,1) 2 $ imageDerivatives1 img
     "snd" ->
       saveImage targetImage $ montage (2,2) 2 $ imageDerivatives2 img
     "mag" ->
-      saveImage targetImage $ gmag img
+      saveImage targetImage mag'
     "ang" ->
-      saveImage targetImage $ gang img
+      saveImage targetImage $ unitNormalize ang'
+    "ext" ->
+      saveImage targetImage $ drawPixelsColor (grayToRGB img) $
+        map (valueToColor cyan) $ gradientExtrema mag' ang'
     "zero" ->
-      saveImage targetImage $ zeroCrossings $ ilog img
+      saveImage targetImage $ drawPixelsColor (grayToRGB img) $
+        map (valueToColor cyan) $ zeroCrossings $ ilog img
     "maxzero" ->
-      saveImage targetImage $ maxZeroCrossings (gmag img) (ilog img)
+      saveImage targetImage $ drawPixelsColor (grayToRGB img) $
+        map (valueToColor cyan) $ maxZeroCrossings mag' ang' (ilog img)
     otherwise -> error usage

@@ -28,18 +28,33 @@ threshold m t image = mapImage (clamp m t) image
     clamp (lower,higher) t v | v < t     = lower
                              | otherwise = higher
 
+pi_1_8 =     pi / 8
+pi_1_4 =     pi / 4
+pi_3_8 = 3 * pi / 8
+pi_1_2 =     pi / 2
+pi_5_8 = 5 * pi / 8
 pi_3_4 = 3 * pi / 4
-pi_1_2 = pi / 2
-pi_1_4 = pi / 4
+pi_7_8 = 7 * pi / 8
 
+-- | Quantize the gradient angle acquired with atan2 into the four main
+--   directions corresponding to the 8-neighborhood:
+--   1 = horizontal, 2 = diagonal from top left to bottom right, 3 = vertical,
+--   4 = diagonal from bottom left to top right. Keep in mind that this is the
+--   direction of the gradient; the direction of edge is perpendicular to this.
+--   Value 0 is received for 'no edge'; could threshold the quantized angle to
+--   zero based on gradient magnitude.
 quantizeAngle4 :: Image GrayScale Float -> Image GrayScale Float
 quantizeAngle4 image = mapImage q4 image
   where
-    q4 v | v > pi_3_4  = 0
-         | v > pi_1_4  = 1
-         | v > -pi_1_4 = 2
-         | v > -pi_3_4 = 3
-         | otherwise   = 0
+    q4 v | v >  pi_7_8 = 1
+         | v >  pi_5_8 = 2
+         | v >  pi_3_8 = 3
+         | v >  pi_1_8 = 4
+         | v > -pi_1_8 = 1
+         | v > -pi_3_8 = 2
+         | v > -pi_5_8 = 3
+         | v > -pi_7_8 = 4
+         | otherwise   = 1
 
 -- | Finds the threshold value using mean-dev method
 tFromMeanDev :: Float -> Float -> Image GrayScale D32 -> Float
