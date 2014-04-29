@@ -31,12 +31,12 @@ gaussian2Ddy s (x,y) =
 
 gaussian2Ddx2 :: Float -> (Int,Int) -> Float
 gaussian2Ddx2 s (x,y) =
-  (-1 + (iToF x)**2/s**2) / (2 * pi * s**4) *
+  -(-1 + (iToF x)**2/s**2) / (2 * pi * s**4) *
     exp (-(((iToF x)**2 + (iToF y)**2) / (2 * s**2)))
 
 gaussian2Ddy2 :: Float -> (Int,Int) -> Float
 gaussian2Ddy2 s (x,y) =
-  (-1 + (iToF y)**2/s**2) / (2 * pi * s**4) *
+  -(-1 + (iToF y)**2/s**2) / (2 * pi * s**4) *
     exp (-(((iToF x)**2 + (iToF y)**2) / (2 * s**2)))
 
 gaussian2Ddxdy :: Float -> (Int,Int) -> Float

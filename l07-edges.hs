@@ -15,8 +15,6 @@ import Thresholding
 import Neighborhoods
 
 import ReadArgs
-import Control.Monad
-import System.IO.Unsafe
 
 sigma = 0.8
 -- mask should fit 6 sigma
@@ -29,13 +27,6 @@ maskdx2 = createMask2D (gaussian2Ddx2 sigma) size
 maskdy2 = createMask2D (gaussian2Ddy2 sigma) size
 maskdxdy = createMask2D (gaussian2Ddxdy sigma) size
 masklog = createMask2D (laplacianOfGaussian sigma) size
-
-preventZero image = mapImage c image
-  where
-        c v | v > 0.0001 = v
-            | v < 0.0001 = v
-            | v >= 0     = 0.0001
-            | otherwise  = -0.0001
 
 imageDerivatives1 image =
   [ stretchHistogram dx
@@ -56,7 +47,7 @@ imageDerivatives2 image =
     dxdy = convolve2D maskdxdy center image
     ilog = dx2 #+ dy2
 
-unsharp image = unitNormalize $ image #- gimage
+unsharp image = unitNormalize $ image #+ (image #- gimage)
   where
     gimage = convolve2D maskg center image
 
@@ -98,20 +89,6 @@ maxZeroCrossings mag ang log =
 
 gradientExtrema mag ang =
   filterNeighborhood (nes5 ang) maxEdge mag
-
-drawPixelsGray :: Image GrayScale Float -> [((Int,Int),Float)]
-    -> Image GrayScale Float
-drawPixelsGray img points = unsafePerformIO $ do
-  mimg <- toMutable img
-  forM_ points $ \(p,v) -> setPixel p v mimg
-  fromMutable mimg
-
-drawPixelsColor :: Image RGB Float -> [((Int,Int),(Float,Float,Float))]
-    -> Image RGB Float
-drawPixelsColor img points = unsafePerformIO $ do
-  mimg <- toMutable img
-  forM_ points $ \(p,v) -> setPixel p v mimg
-  fromMutable mimg
 
 usage :: String
 usage = "usage: l07-edges [fst|snd|mag|ang|ext|zero|maxzero] source target"

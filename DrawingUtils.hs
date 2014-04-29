@@ -22,6 +22,8 @@ module DrawingUtils
 , pointsToRects
 , pointToCircle
 , pointsToCircles
+, drawPixelsGray
+, drawPixelsColor
 ) where
 
 import CV.Image
@@ -31,6 +33,8 @@ import CV.Drawing
 import Utils.Rectangle hiding (scale)
 
 import Data.Function
+import Control.Monad
+import System.IO.Unsafe
 
 import BasicUtils
 
@@ -226,3 +230,17 @@ pointToCircle r ((x,y),_) = ((x,y),r)
 --   around each point.
 pointsToCircles :: Int -> [((Int,Int),a)] -> [((Int,Int),Int)]
 pointsToCircles r ps = map (pointToCircle r) ps
+
+drawPixelsGray :: Image GrayScale Float -> [((Int,Int),Float)]
+    -> Image GrayScale Float
+drawPixelsGray img points = unsafePerformIO $ do
+  mimg <- toMutable img
+  forM_ points $ \(p,v) -> setPixel p v mimg
+  fromMutable mimg
+
+drawPixelsColor :: Image RGB Float -> [((Int,Int),(Float,Float,Float))]
+    -> Image RGB Float
+drawPixelsColor img points = unsafePerformIO $ do
+  mimg <- toMutable img
+  forM_ points $ \(p,v) -> setPixel p v mimg
+  fromMutable mimg

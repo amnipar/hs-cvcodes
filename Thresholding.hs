@@ -1,6 +1,7 @@
 module Thresholding
 ( threshold
 , quantizeAngle4
+, preventZero
 , tFromMeanDev
 , tOtsu
 , convZeroOneToMinusPlus
@@ -55,6 +56,14 @@ quantizeAngle4 image = mapImage q4 image
          | v > -pi_5_8 = 3
          | v > -pi_7_8 = 4
          | otherwise   = 1
+
+preventZero :: Image GrayScale Float -> Image GrayScale Float
+preventZero image = mapImage c image
+  where
+        c v | v > 0.0001 = v
+            | v < 0.0001 = v
+            | v >= 0     = 0.0001
+            | otherwise  = -0.0001
 
 -- | Finds the threshold value using mean-dev method
 tFromMeanDev :: Float -> Float -> Image GrayScale D32 -> Float

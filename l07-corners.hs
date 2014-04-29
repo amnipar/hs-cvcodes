@@ -66,6 +66,29 @@ harrisLambda image = stretchHistogram $ IM.min lambda1 lambda2
     a12 = gaussian (5,5) $ dx #* dy
     a21 = a12
 
+harrisLambdas :: Image GrayScale D32 -> (Image GrayScale D32,Image GrayScale D32)
+harrisLambdas image = (lambda1,lambda2)
+  where
+    det = (a11 #* a22) #- (a12 #* a21)
+    tra = a11 #+ a22
+    htra = 0.5 |* tra
+    stra24 = IM.sqrt $ (0.25 |* (tra #* tra)) #- det
+    lambda1 = htra #+ stra24
+    lambda2 = htra #- stra24
+    dx = convolve2D maskdx center image
+    dy = convolve2D maskdy center image
+    a11 = gaussian (5,5) $ dx #* dx
+    a22 = gaussian (5,5) $ dy #* dy
+    a12 = gaussian (5,5) $ dx #* dy
+    a21 = a12
+
+-- Hessian matrix:
+-- | dx2  dxdy |
+-- | dxdy dy2  |
+--
+-- T=dx2+dy2       = LoG
+-- D=dx2*dy2-dxdy2 = DoH
+
 hessian :: Image GrayScale D32 -> (Image GrayScale D32,Image GrayScale D32)
 hessian image = (idoh,ilog)
   where
@@ -74,6 +97,23 @@ hessian image = (idoh,ilog)
     dxdy = convolve2D maskdxdy center image
     idoh = stretchHistogram $ (dx2 #* dy2) #- (dxdy #* dxdy)
     ilog = stretchHistogram $ IM.sqrt $ (dx2 #+ dy2) #* (dx2 #+ dy2)
+
+-- L1 = T/2 + (T2/4-D)1/2
+-- L2 = T/2 - (T2/4-D)1/2
+
+-- get the eigenvalues of Hessian as images
+hessianLambdas :: Image GrayScale D32 -> (Image GrayScale D32,Image GrayScale D32)
+hessianLambdas image = (lambda1,lambda2)
+  where
+    dx2 = convolve2D maskdx2 center image
+    dy2 = convolve2D maskdy2 center image
+    dxdy = convolve2D maskdxdy center image
+    det = (dx2 #* dy2) #- (dxdy #* dxdy)
+    tra = dx2 #+ dy2
+    htra = 0.5 |* tra
+    stra24 = IM.sqrt $ (0.25 |* (tra #* tra)) #- det
+    lambda1 = htra #+ stra24
+    lambda2 = htra #- stra24
 
 maximalHarris :: Image GrayScale D32 -> Image RGB D32
 maximalHarris kuva =
@@ -135,10 +175,16 @@ main = do
       saveImage targetImage $ harrisResponse img
     "lharris" ->
       saveImage targetImage $ harrisLambda img
+    "harrisl" ->
+      saveImage targetImage $ montage (2,1) 2 $ map stretchHistogram $
+          pairToList $ harrisLambdas img
     "harris" ->
       saveImage targetImage $ maximalHarris img
     "hessian" ->
       saveImage targetImage $ maximalHessian img
+    "hessianl" ->
+      saveImage targetImage $ montage (2,1) 2 $ map unitNormalize $ pairToList $
+          hessianLambdas img
     "rhessian" ->
       saveImage targetImage $ montage (2,1) 2 $ pairToList $ hessian img
     otherwise -> error usage
