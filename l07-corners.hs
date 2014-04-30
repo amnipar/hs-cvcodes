@@ -187,4 +187,8 @@ main = do
           hessianLambdas img
     "rhessian" ->
       saveImage targetImage $ montage (2,1) 2 $ pairToList $ hessian img
+    "affine" ->
+      saveImage targetImage $ montage (2,1) 2 $
+        [ stretchHistogram $ drawFilter 200 (gaussian2D (200/12))
+        , stretchHistogram $ drawFilter 200 (affineGaussian (2,1) (pi/8) (200/12)) ]
     otherwise -> error usage

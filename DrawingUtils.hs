@@ -24,6 +24,7 @@ module DrawingUtils
 , pointsToCircles
 , drawPixelsGray
 , drawPixelsColor
+, drawFilter
 ) where
 
 import CV.Image
@@ -244,3 +245,9 @@ drawPixelsColor img points = unsafePerformIO $ do
   mimg <- toMutable img
   forM_ points $ \(p,v) -> setPixel p v mimg
   fromMutable mimg
+
+drawFilter :: Int -> ((Int,Int) -> Float) -> Image GrayScale Float
+drawFilter s f = imageFromFunction (s,s) f'
+  where
+    r = s `div` 2
+    f' (x,y) = f (x-r,y-r)
