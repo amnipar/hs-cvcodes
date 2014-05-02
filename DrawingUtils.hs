@@ -16,6 +16,7 @@ module DrawingUtils
 , plotSpikes
 , plotRects
 , plotCircles
+, plotEllipses
 , plotHistogram
 , pointsToLines
 , pointToRect
@@ -186,6 +187,14 @@ plotCircles color size circles image =
   where
     s | size > 0 = Stroked size
       | otherwise = Filled
+
+plotEllipses :: (Float,Float,Float) -> Int -> [((Int,Int),(Int,Int),Float)]
+    -> Image RGB Float -> Image RGB Float
+plotEllipses color size ellipses image =
+  image <## [ellipseOp color s p r a (0,360) | (p,r,a) <- ellipses]
+  where
+    s | size > 0 = size
+      | otherwise = (-1)
 
 -- | Plots a histogram onto the given image.
 plotHistogram :: (Float,Float,Float) -> Int -> [(Float,Float)]

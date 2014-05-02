@@ -44,9 +44,9 @@ harrisResponse image = stretchHistogram $ det #- (kappa |* (tra #* tra))
     tra = a11 #+ a22
     dx = convolve2D maskdx center image
     dy = convolve2D maskdy center image
-    a11 = gaussian (5,5) $ dx #* dx
-    a22 = gaussian (5,5) $ dy #* dy
-    a12 = gaussian (5,5) $ dx #* dy
+    a11 = gaussian (size+3,size+3) $ dx #* dx
+    a22 = gaussian (size+3,size+3) $ dy #* dy
+    a12 = gaussian (size+3,size+3) $ dx #* dy
     a21 = a12
     kappa = 0.15
 
@@ -61,9 +61,9 @@ harrisLambda image = stretchHistogram $ IM.min lambda1 lambda2
     lambda2 = htra #- stra24
     dx = convolve2D maskdx center image
     dy = convolve2D maskdy center image
-    a11 = gaussian (5,5) $ dx #* dx
-    a22 = gaussian (5,5) $ dy #* dy
-    a12 = gaussian (5,5) $ dx #* dy
+    a11 = gaussian (size+3,size+3) $ dx #* dx
+    a22 = gaussian (size+3,size+3) $ dy #* dy
+    a12 = gaussian (size+3,size+3) $ dx #* dy
     a21 = a12
 
 harrisLambdas :: Image GrayScale D32 -> (Image GrayScale D32,Image GrayScale D32)
@@ -77,9 +77,9 @@ harrisLambdas image = (lambda1,lambda2)
     lambda2 = htra #- stra24
     dx = convolve2D maskdx center image
     dy = convolve2D maskdy center image
-    a11 = gaussian (5,5) $ dx #* dx
-    a22 = gaussian (5,5) $ dy #* dy
-    a12 = gaussian (5,5) $ dx #* dy
+    a11 = gaussian (size+3,size+3) $ dx #* dx
+    a22 = gaussian (size+3,size+3) $ dy #* dy
+    a12 = gaussian (size+3,size+3) $ dx #* dy
     a21 = a12
 
 -- Hessian matrix:
@@ -115,6 +115,24 @@ hessianLambdas image = (lambda1,lambda2)
     lambda1 = htra #+ stra24
     lambda2 = htra #- stra24
 
+logThreshold :: Float -> Image GrayScale Float -> Image GrayScale Float
+logThreshold t image = threshold (0,1) t log
+  where
+    log = IM.sqrt $ (dx2 #+ dy2) #* (dx2 #+ dy2)
+    dx2 = (sigma**2) |* convolve2D maskdx2 center image
+    dy2 = (sigma**2) |* convolve2D maskdy2 center image
+
+hessianThreshold :: Float -> Image GrayScale Float -> Image GrayScale Float
+hessianThreshold r image = threshold (0,1) t ratio
+  where
+    dx2 = convolve2D maskdx2 center image
+    dy2 = convolve2D maskdy2 center image
+    dxdy = convolve2D maskdxdy center image
+    det = (dx2 #* dy2) #- (dxdy #* dxdy)
+    tra = dx2 #+ dy2
+    ratio = IM.div det (IM.maxS 0.0001 $ tra #* tra)
+    t = r / (r+1)**2
+
 maximalHarris :: Image GrayScale D32 -> Image RGB D32
 maximalHarris kuva =
   plotCircles red 0 (pointsToCircles 5 points) $ grayToRGB kuva
@@ -124,9 +142,11 @@ maximalHarris kuva =
     points = relativeThresholdPoints 0.1 $ filterNeighborhood n8 isMaximal $
         harrisLambda kuva
 
+circleToEllipse (p,r) = (p,(r,2*r),45)
+
 maximalHessian :: Image GrayScale D32 -> Image RGB D32
 maximalHessian kuva =
-  plotCircles red 0 (pointsToCircles 5 points) $ grayToRGB kuva
+  plotEllipses red 0 (map circleToEllipse $ pointsToCircles 5 points) $ grayToRGB kuva
   where
     points = relativeThresholdPoints2 0.4 $ filterNeighborhood2 n8 isMaximal $
         hessian kuva
@@ -152,9 +172,9 @@ harriskulmat kuva = montage (2,3) 4
     kappa = 0.10
     r = ((a11 #* a22) #- (a12 #* a21)) #- (kappa |* ((a11 #+ a22) #* (a11 #+ a22)))
 
-sigma = 1
+sigma = 3
 -- mask should fit 6 sigma
-size = 7
+size = 2 * (ceiling $ 3 * sigma) + 1
 center = getMaskCenter2D size
 maskdx = createMask2D (gaussian2Ddx sigma) size
 maskdy = createMask2D (gaussian2Ddy sigma) size
@@ -185,6 +205,10 @@ main = do
     "hessianl" ->
       saveImage targetImage $ montage (2,1) 2 $ map unitNormalize $ pairToList $
           hessianLambdas img
+    "hessiant" ->
+      saveImage targetImage $ hessianThreshold 2 img
+    "logt" ->
+      saveImage targetImage $ logThreshold 0.05 img
     "rhessian" ->
       saveImage targetImage $ montage (2,1) 2 $ pairToList $ hessian img
     "affine" ->
@@ -192,3 +216,6 @@ main = do
         [ stretchHistogram $ drawFilter 200 (gaussian2D (200/12))
         , stretchHistogram $ drawFilter 200 (affineGaussian (2,1) (pi/8) (200/12)) ]
     otherwise -> error usage
+
+-- (Color a b) -> Int -> (Int,Int) -> (Int,Int) -> Float -> (Float,Float)
+-- ellipseOp c t (x,y) (r1,r2) a (a1,a2)

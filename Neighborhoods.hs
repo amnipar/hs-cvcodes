@@ -18,8 +18,11 @@ module Neighborhoods
 
 import CV.Image
 
+import BasicUtils
+
 type Neighborhood = (Float,[Float])
 type NeighborhoodFunction = (Int,Int) -> (Int,Int) -> [(Int,Int)]
+type ScaleNeighborhood = (Int,Float,[Float])
 
 -- 4-neighborhood: coordinates to the four directly adjacent pixels
 --  x
@@ -60,6 +63,16 @@ n8 (w,h) (x,y) = nwn $ nn $ nen $ en $ sen $ sn $ swn $ wn []
            | otherwise          = ns
     wn  ns | x > 0              = (x-1,y):ns
            | otherwise          = ns
+
+-- 8-neighborhood in scale space when images are not scaled down; the
+-- neighboring pixel in scale 2 is 2 pixels away. The distance to the diagonal
+-- neighbor will approach s when s increases.
+sn8 :: Int -> (Int,Int) -> (Int,Int) -> [(Int,Int)]
+sn8 s (w,h) (x,y) = filter valid $
+  [(x-r,y-r),(x,y-s),(x+r,y-r),(x+s,y),(x+r,y+r),(x,y+s),(x-r,y+r),(x-s,y)]
+  where
+    r = round $ sqrt $ (iToF r)**2 / 2
+    valid (x,y) = not $ (x < 0) || (x >= w) || (y < 0) || (y >= h)
 
 -- a spherical neighborhood with diameter 5
 --  xxx
@@ -126,6 +139,23 @@ get8Neighborhood img (x,y) = getNeighborhood (n8 (w,h) (x,y)) img (x,y)
 getS5Neighborhood img (x,y) = getNeighborhood (ns5 (w,h) (x,y)) img (x,y)
   where
     (w,h) = getSize img
+
+getScaleNeighborhood :: Int -> [Image GrayScale Float] -> (Int,Int)
+    -> (ScaleNeighborhood,ScaleNeighborhood,ScaleNeighborhood)
+getScaleNeighborhood s images (x,y)
+  | s < 2 || (length images) < s+1 = error "scale neighborhood unavailable"
+  | otherwise = (n1,n2,n3)
+  where
+    (w,h) = getSize $ head images
+    n1 = (s-1,p1 (x,y),map p1 sn1)
+    n2 = (s,p2 (x,y),map p2 sn2)
+    n3 = (s+1,p3 (x,y),map p3 sn3)
+    p1 (x,y) = getPixel (x,y) (images !! (s-1))
+    p2 (x,y) = getPixel (x,y) (images !! s)
+    p3 (x,y) = getPixel (x,y) (images !! (s+1))
+    sn1 = sn8 (s-1) (w,h) (x,y)
+    sn2 = sn8 s (w,h) (x,y)
+    sn3 = sn8 (s+1) (w,h) (x,y)
 
 filterNeighborhood :: ((Int,Int) -> (Int,Int) -> [(Int,Int)])
     -> ((Float,[Float]) -> Bool)
