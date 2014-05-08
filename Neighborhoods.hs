@@ -14,6 +14,7 @@ module Neighborhoods
 , filterNeighborhood
 , filterNeighborhood2
 , filterNeighborhoodPair
+, getContour
 ) where
 
 import CV.Image
@@ -122,6 +123,8 @@ nes5 ang (w,h) (x,y)
   where
     a = getPixel (x,y) ang
 
+
+
 getNeighborhood :: [(Int,Int)] -> Image GrayScale Float -> (Int,Int)
   -> (Float,[Float])
 getNeighborhood n i (x,y) = (getPixel (x,y) i, map (p i) n)
@@ -190,3 +193,68 @@ filterNeighborhoodPair (n1,n2) cond (img1,img2) =
     pn1 x y = getNeighborhood (n1 (w,h) (x,y)) img1 (x,y)
     pn2 x y = getNeighborhood (n2 (w,h) (x,y)) img2 (x,y)
     (w,h) = getSize img1
+
+data Direction =
+  DirN  |
+  DirNE |
+  DirE  |
+  DirSE |
+  DirS  |
+  DirSW |
+  DirW  |
+  DirNW
+
+getNeighbor :: (Int,Int) -> Direction -> ((Int,Int),Direction)
+getNeighbor (x,y) DirN  = ((x,y-1),DirN)
+getNeighbor (x,y) DirNE = ((x+1,y-1),DirNE)
+getNeighbor (x,y) DirE  = ((x+1,y),DirE)
+getNeighbor (x,y) DirSE = ((x+1,y+1),DirSE)
+getNeighbor (x,y) DirS  = ((x,y+1),DirS)
+getNeighbor (x,y) DirSW = ((x-1,y+1),DirSW)
+getNeighbor (x,y) DirW  = ((x-1,y),DirW)
+getNeighbor (x,y) DirNW = ((x-1,y-1),DirNW)
+
+getNextDirections :: Direction -> [Direction]
+getNextDirections DirN  = [DirNW,DirN,DirNE,DirE,DirSE]
+getNextDirections DirNE = [DirNW,DirN,DirNE,DirE,DirSE,DirS]
+getNextDirections DirE  = [DirNE,DirE,DirSE,DirS,DirSW]
+getNextDirections DirSE = [DirNE,DirE,DirSE,DirS,DirSW,DirW]
+getNextDirections DirS  = [DirSE,DirS,DirSW,DirW,DirNW]
+getNextDirections DirSW = [DirSE,DirS,DirSW,DirW,DirNW,DirN]
+getNextDirections DirW  = [DirSW,DirW,DirNW,DirN,DirNE]
+getNextDirections DirNW = [DirSW,DirW,DirNW,DirN,DirNE,DirE]
+
+findFirst :: Image GrayScale Float -> ((Int,Int),Direction)
+findFirst image = (fst $ snd $ head $ filter checkVals ps, DirNE)
+  where
+    (w,h) = getSize image
+    ps = [((x,y),getNeighbor (x,y) DirW) | y <- [0..w-2], x <- [0..h-1]]
+    checkVals ((x1,y1),((x2,y2),_)) = v1 == 0 && v2 == 1
+      where
+        v1 = getPixel (x1,y1) image
+        v2 = getPixel (x2,y2) image
+
+findNext :: Image GrayScale Float -> (Int,Int) -> ((Int,Int),Direction)
+    -> ((Int,Int),Direction)
+findNext image (w,h) ((x,y),dir) = fst $ head ps
+  where
+    ns = filter check $ map (getNeighbor (x,y)) $ getNextDirections dir
+    check ((x,y),_) = not $ x < 0 || x >= w || y < 0 || y >= h
+    ps = filter isObj $ map p ns
+    p ((x,y),dir) = (((x,y),dir),getPixel (x,y) image)
+    isObj (_,v) = v == 1
+
+accContour :: Image GrayScale Float -> (Int,Int) -> (Int,Int)
+    -> ((Int,Int),Direction) -> [(Int,Int)]
+accContour image (w,h) (sx,sy) prev
+  | sx == x && sy == y = [(x,y)]
+  | otherwise          =
+    (x,y):(accContour image (w,h) (sx,sy) ((x,y),dir))
+  where
+    ((x,y),dir) = findNext image (w,h) prev
+
+getContour :: Image GrayScale Float -> [(Int,Int)]
+getContour image = accContour image (w,h) (x,y) ((x,y),dir)
+  where
+    (w,h) = getSize image
+    ((x,y),dir) = findFirst image

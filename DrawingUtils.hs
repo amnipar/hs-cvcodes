@@ -188,6 +188,9 @@ plotCircles color size circles image =
     s | size > 0 = Stroked size
       | otherwise = Filled
 
+-- | Plots a list of ellipses over the image. The ellipses are given as a
+--   centerpoint, two radii, and angle. The angle describes the direction in
+--   which the longer axis of the ellipse is pointing.
 plotEllipses :: (Float,Float,Float) -> Int -> [((Int,Int),(Int,Int),Float)]
     -> Image RGB Float -> Image RGB Float
 plotEllipses color size ellipses image =
