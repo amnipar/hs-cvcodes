@@ -131,12 +131,6 @@ diffZeroCrossings ang diff inv =
 gradientExtrema mag ang =
   filterNeighborhood (nes5 ang) maxEdge mag
 
-zeroNormalize image = norm |* (iext |+ image)
-  where
-    (imin,imax) = IM.findMinMax image
-    iext = max (abs imin) imax
-    norm = 1 / (2 * iext)
-
 usage :: String
 usage = "usage: l07-edges [fst|snd|mag|ang|ext|zero|maxzero] source target"
 

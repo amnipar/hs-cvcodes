@@ -15,9 +15,12 @@ module Images
 , resizeImage
 , resizeImageFaithful
 , scaleImage
+, zeroNormalize
 ) where
 
 import CV.Image
+import qualified CV.ImageMath as IM
+import CV.ImageMathOp
 import CV.Pixelwise
 import CV.Transforms
 
@@ -131,3 +134,9 @@ resizeImageFaithful size image = scaleToSize Cubic True size image
 scaleImage :: (CreateImage (Image c Float)) =>
   (Float,Float) -> Image c Float -> Image c Float
 scaleImage ratio image = scale Cubic ratio image
+
+zeroNormalize image = norm |* (iext |+ image)
+  where
+    (imin,imax) = IM.findMinMax image
+    iext = max (abs imin) imax
+    norm = 1 / (2 * iext)

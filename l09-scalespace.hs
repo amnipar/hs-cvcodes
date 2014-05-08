@@ -31,9 +31,10 @@ sigmaToFilter f sigma = convolve2D mask center
     center = getMaskCenter2D size
 
 -- sigma of the gaussian is sqrt t, where t is 0,2,4,... and 0 is original
---sigmas = [sqrt 2, sqrt 4, sqrt 8, sqrt 16, sqrt 32]
+-- sigmas = [sqrt 2, sqrt 4, sqrt 8, sqrt 16, sqrt 32]
+-- suitable sigmas for DoG are 1.6*previous sigma
 isigmas = [1,1.6,1.6**2,1.6**3,1.6**4]
--- derivative sigma is one bigger than integral sigma
+-- derivative sigma is one bigger than integral sigma; add the original as well
 dsigmas = map (+1) (0:isigmas)
 sizes = map sigmaToSize isigmas
 smasks = map (sigmaToMask gaussian2D) isigmas

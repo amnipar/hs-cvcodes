@@ -14,6 +14,7 @@ module DrawingUtils
 , signalToPixel
 , plotLines
 , plotSpikes
+, plotPoints
 , plotRects
 , plotCircles
 , plotEllipses
@@ -166,7 +167,11 @@ plotSpikes color lineSize pointSize y0 points image =
 
 plotPoints :: (Float,Float,Float) -> Int -> [(Int,Int)]
     -> Image RGB Float -> Image RGB Float
-plotPoints color size points image = image
+plotPoints color size points image = 
+  image <## [lineOp color 1 (x-r,y) (x+r,y) | (x,y) <- points]
+        <## [lineOp color 1 (x,y-r) (x,y+r) | (x,y) <- points]
+  where
+    r = size `div` 2
 
 -- | Plots a list of rectangles over the image. The rectangles are given as the
 --   top left corner point and (width,height) pair, in pixel coordinates.
