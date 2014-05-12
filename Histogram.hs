@@ -33,9 +33,9 @@ accVectorHistogram :: Int -> [[Float]] -> [[(Float,Float)]]
 accVectorHistogram bins xss =
   norm $ map Map.toList $ List.foldl' accBins initMaps xss
   where
-    n = length xss
-    xmins = map minimum xss
-    xmaxs = map maximum xss
+    n = length $ head xss
+    xmins = map minimum $ List.transpose xss
+    xmaxs = map maximum $ List.transpose xss
     xranges = zipWith (-) xmaxs xmins
     xsteps = map (/(iToF bins)) xranges
     initMaps :: [Map.Map Int Float]
@@ -59,7 +59,7 @@ accBoundedVectorHistogram :: ([Float],[Float]) -> Int -> [[Float]]
 accBoundedVectorHistogram (xmins,xmaxs) bins xss =
   norm $ map Map.toList $ List.foldl' accBins initMaps xss
   where
-    n = length xss
+    n = length $ head xss
     --xmins = map minimum xss
     --xmaxs = map maximum xss
     xranges = zipWith (-) xmaxs xmins

@@ -97,9 +97,6 @@ filterContour points =
     xs = map (iToF.fst) points
     ys = map (iToF.snd) points
 
-writeImage :: String -> (Int,Image GrayScale Float) -> IO ()
-writeImage base (i,img) = saveImage (printf (base ++ "%02d.png") i) img
-
 roundPair (x,y) = (round x, round y)
 
 
@@ -124,20 +121,7 @@ main = do
     pfa = signalToPixel (width,height) margin (xscale,yscale) ymin fa
     --pd = signalToPixel (width,height) margin (xscale,yscale) ymin d
     pfd = signalToPixel (width,height) margin (xscale,yscale) ymin fd
-    clear = emptyGrayImage (201,201) 0
   --saveImage outputImage $ plotLines cyan 1 c $ convGrayToColor timg
-  --mapM_ (writeImage "triangle") $ zip [1..] (generateTriangleImages 16 401)
-  --mapM_ (writeImage "quad") $ zip [1..] (generateQuadImages 16 401)
-  --mapM_ (writeImage "circle") $ zip [1..] (generateCircleImages 16 401)
-  saveImage "triangles.png" $ unitNormalize $ foldr (#+) clear $
-      generateTriangleImages 1000 201
-  saveImage "quads.png" $ unitNormalize $ foldr (#+) clear $
-      generateQuadImages 1000 201
-  saveImage "circles.png" $ unitNormalize $ foldr (#+) clear $
-      generateCircleImages 1000 201
-  --saveImage "triangles.png" $ montage (4,4) 2 $ generateTriangleImages 16 201
-  --saveImage "quads.png" $ montage (4,4) 2 $ generateQuadImages 16 201
-  --saveImage "circles.png" $ montage (4,4) 2 $ generateCircleImages 16 201
   saveImage outputImage $ montage (1,2) 2
       [ plotLines green 2 (map roundPair fc) $ convGrayToColor timg
       , plotLines red 1 pfd $ -- plotLines dred 1 pfd $
