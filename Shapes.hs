@@ -62,7 +62,7 @@ generateQuad rng sigma (w,h) = do
     sw = 0.2 * (iToF w)
     sh = 0.2 * (iToF h)
     xs = [-sw,-sw,sw,sw]
-    ys = [-sh,sw,sw,-sw]
+    ys = [-sh,sh,sh,-sh]
   xs' <- corruptWithGaussian rng (sigma*sw) xs
   ys' <- corruptWithGaussian rng (sigma*sh) ys
   a <- getFlat rng (-pi) pi
