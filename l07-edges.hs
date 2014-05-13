@@ -9,6 +9,7 @@ import CV.ColourUtils
 import CV.Operations
 
 import DrawingUtils
+import Images
 import Filters
 import Gaussian
 import Thresholding
@@ -184,7 +185,7 @@ main = do
         , zeroNormalize $ drawFilter 200 (gaussian2Ddxdy (200/12))
         , zeroNormalize $ drawFilter 200 (gaussian2Ddx3 (200/12))
         , zeroNormalize $ drawFilter 200 (gaussian2Ddx2dy (200/12))
-        , zeroNormalize $ drawFilter 200 (gaussian2Ddy3 (200/12))
         , zeroNormalize $ drawFilter 200 (gaussian2Ddxdy2 (200/12))
+        , zeroNormalize $ drawFilter 200 (gaussian2Ddy3 (200/12))
         ]
     otherwise -> error usage
