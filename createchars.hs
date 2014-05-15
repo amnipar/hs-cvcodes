@@ -18,6 +18,7 @@ import GSL.Random.Dist
 import Data.Time.Clock
 import Foreign(Word64)
 import Text.Printf
+import Data.Char
 
 rotate :: Double -> (Double,Double) -> (Double,Double) -> (Double,Double)
 rotate a (dx,dy) (x,y) =
@@ -61,6 +62,18 @@ numImages = 99
 writeImage :: String -> (Int,Image GrayScale Float) -> IO ()
 writeImage base (i,img) = saveImage (printf (base ++ "_%02d.png") i) img
 
+createCharImages :: RNG -> Int -> Char -> IO ()
+createCharImages rng n c = do
+  let
+    cu = toUpper c
+    cl = toLower c
+  print cu
+  img <- readFromFile $ "char/" ++ [cu] ++ "u.png"
+  imgs <- replicateM n $ randomPerturbation rng img
+  mapM_ (writeImage ("./dchars/" ++ [cl] ++ "/" ++ [cl])) $ zip [1..] imgs
+
+chars = "abcdefghijklmnopqrstuvwxyz"
+
 main = do
   (inputImage,outputImage) <- readArgs
   img <- readFromFile inputImage
@@ -70,15 +83,7 @@ main = do
   c <- replicateM 16 $ randomPerturbation rng img
   c' <- replicateM 1000 $ randomPerturbation rng img
   saveImage outputImage $ montage (4,4) 2 c
-  let
-    clear = emptyGrayImage (21,21) 0
-  saveImage "a.png" $ unitNormalize $ foldr (#+) clear $ map (resizeImage (21,21)) c'
-  aimg <- readFromFile "char/Au.png"
-  aimgs <- replicateM numImages $ randomPerturbation rng aimg
-  bimg <- readFromFile "char/Bu.png"
-  bimgs <- replicateM numImages $ randomPerturbation rng bimg
-  cimg <- readFromFile "char/Cu.png"
-  cimgs <- replicateM numImages $ randomPerturbation rng cimg
-  mapM_ (writeImage "./dchars/a") $ zip [1..] aimgs
-  mapM_ (writeImage "./dchars/b") $ zip [1..] bimgs
-  mapM_ (writeImage "./dchars/c") $ zip [1..] cimgs
+  --let
+  --  clear = emptyGrayImage (21,21) 0
+  --saveImage "a.png" $ unitNormalize $ foldr (#+) clear $ map (resizeImage (21,21)) c'
+  mapM_ (createCharImages rng numImages) chars
