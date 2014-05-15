@@ -94,7 +94,7 @@ height = 40
 margin = 5
 -- plot x scale
 
-knear kd p = map fst $ KD.kNearestNeighbors kd 15 p
+knear kd k p = map fst $ KD.kNearestNeighbors kd k p
 
 readData :: FilePath -> IO [HuFeature]
 readData p = do
@@ -166,6 +166,8 @@ pairplot cran qran tran (x,y)
     qps = signalToPixel (100,100) 2 (4,4) (-2) $ map (randomProject b) qran
     tps = signalToPixel (100,100) 2 (4,4) (-2) $ map (randomProject b) tran
 
+replaceClass c (_,f) = (c,f)
+
 main = do
   (nbins,inv,inputImage, outputImage) <- readArgs
   cf <- readData "circles.dat"
@@ -188,10 +190,10 @@ main = do
     thist = accBoundedVectorHistogram (xmins,xmaxs) 300 $ map huToList tf
     ctest = take 25 cf
     ctrain = drop 25 cf
-    qtest = take 25 qf
-    qtrain = drop 25 qf
-    ttest = take 25 tf
-    ttrain = drop 25 tf
+    qtest = map (replaceClass 1) $ take 25 qf
+    qtrain = map (replaceClass 1) $ drop 25 qf
+    ttest = map (replaceClass 2) $ take 25 tf
+    ttrain = map (replaceClass 2) $ drop 25 tf
     kd = KD.fromList (ctrain ++ qtrain ++ ttrain)
     --b = sparseRandomBasis
     b = gaussianRandomBasis
@@ -224,11 +226,11 @@ main = do
   --print xmins
   --print xmaxs
   print $ map (\xs -> (head xs, length xs)) $ group $ L.sort $ 
-      concatMap (knear kd) ctest
+      concatMap (knear kd 5) ctest
   print $ map (\xs -> (head xs, length xs)) $ group $ L.sort $ 
-      concatMap (knear kd) qtest
+      concatMap (knear kd 5) qtest
   print $ map (\xs -> (head xs, length xs)) $ group $ L.sort $ 
-      concatMap (knear kd) ttest
+      concatMap (knear kd 5) ttest
   let
     cimgs = map (\h -> plotHistogram black margin h clear) chist
     qimgs = map (\h -> plotHistogram black margin h clear) qhist

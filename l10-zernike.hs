@@ -10,6 +10,7 @@ import Thresholding
 
 import ReadArgs
 import System.IO.Unsafe
+import Control.Applicative
 
 pixelToRadial :: (Int,Int) -> Int -> ((Int,Int),Float)
     -> ((Int,Int),(Float,Float),Float)
@@ -96,6 +97,25 @@ zernikeReconstruct (w,h) zs = drawRadial (map (zr (zip z zs)) rp) img
     r = min cx cy
     rp = map (pixelToRadial (cx,cy) r) $ getPixels img
 
+px x y = iToF $ x
+py x y = iToF $ y
+px2 x y = (iToF x)**2
+py2 x y = (iToF y)**2
+pxy x y = iToF $ x*y
+px3 x y = (iToF x)**3
+px2y x y = (iToF x)**2 * (iToF y)
+pxy2 x y = (iToF x) * (iToF y)**2
+py3 x y = (iToF y)**3
+
+pixelToPoly f ((x,y),v) = ((x,y), f x y)
+
+drawPoly rp img = unsafePerformIO $ do
+  mimg <- toMutable img
+  mapM_ (setP mimg) rp
+  unitNormalize <$> fromMutable mimg
+  where
+    setP mimg ((x,y),v) = setPixel (x,y) v mimg
+
 drawRadial rp img = unsafePerformIO $ do
   mimg <- toMutable img
   mapM_ (setR mimg) rp
@@ -138,7 +158,18 @@ main = do
     rp = map (pixelToRadial (50,50) 50) $ getPixels clear
     r n m = unitNormalize $ drawRadialRe n m rp clear
     i n m = unitNormalize $ drawRadialIm n m rp clear
-  saveImage outputImage $ unitNormalize zr
+  saveImage outputImage $ montage (3,3) 2 $
+    [ drawPoly (map (pixelToPoly px) $ getPixels clear) clear
+    , drawPoly (map (pixelToPoly py) $ getPixels clear) clear
+    , drawPoly (map (pixelToPoly px2) $ getPixels clear) clear
+    , drawPoly (map (pixelToPoly pxy) $ getPixels clear) clear
+    , drawPoly (map (pixelToPoly py2) $ getPixels clear) clear
+    , drawPoly (map (pixelToPoly px3) $ getPixels clear) clear
+    , drawPoly (map (pixelToPoly px2y) $ getPixels clear) clear
+    , drawPoly (map (pixelToPoly pxy2) $ getPixels clear) clear
+    , drawPoly (map (pixelToPoly py3) $ getPixels clear) clear
+    ]
+  --saveImage outputImage $ unitNormalize zr
   saveImage "zre.png" $ montage (11,6) 2 $
     [      clear,     clear,     clear,     clear,     clear,(r 0 0),  clear,  clear,  clear,  clear,  clear
     ,      clear,     clear,     clear,     clear,(r 1 (-1)),(r 1 0),(r 1 1),  clear,  clear,  clear,  clear
