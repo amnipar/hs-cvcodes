@@ -29,6 +29,10 @@ Dropbox links:
 * plant: Spectral imaging data for leaves of a real plant and a plastic plant
     - <https://www.dropbox.com/s/rud2k9j9yslu4xo/plant.zip>
 
+Neural network examples require the SCOMA artificial neural network library. Get
+it from git@yousource.it.jyu.fi:~amjayee/jyu-machine-learning/mje-scoma-ann.git
+and follow the instructions to install. Requires the Atlas library.
+
 The following are example codes and programs for individual lectures, presented
 in the order they appear on the lectures:
 
@@ -56,6 +60,12 @@ l07-corners.hs        Corner detection with Harris and Hessian.
 l08-clustering.hs     Image segmentation/quantization with k-means clustering.
 l08-graph.hs          Image segmentation with attribute graphs.
 l08-normcut.hs        Image segmentation with normalized cuts.
+l09-scalespaces.hs    Analyzing images in multiple scales.
+l10-contours.hs       Extracting and describing component contours.
+l10-moments.hs        Describing component shape with image moments.
+l10-zernike.hs        Describing component shape with Zernike moments.
+l11-knn.hs            K neares neighbors classification.
+l11-neuralnet.hs      Neural network classification with MLP.
 
 The following are utility modules containing commonly used functions and types.
 
@@ -72,6 +82,7 @@ Graph.hs          Utilities for using attributed graphs for image analysis.
 Histogram.hs      Accumulating histograms of values, comparing histograms (soon)
 Images.hs         Generating various test images.
 IOUtils.hs        Utilities for IO, such as reading and writing files.
+Moments.hs        Calculating moments for components.
 Morphology.hs     Morphological and hit-or-miss operations for Float images.
 Neighborhoods.hs  Utilities for handling pixel neighborhoods.
 Random.hs         Utilities for creating random vectors and drawing samples.
